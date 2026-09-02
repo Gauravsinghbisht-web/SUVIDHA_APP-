@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screens/worker/worker_home_screen.dart';
 import '../../../models/user_role.dart';
-import '../../../home/user_home_screen.dart';
+import '../../../screens/user/user_home_screen.dart';
 import '../signup/signup_screen.dart';
 
 import 'login_controller.dart';

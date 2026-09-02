@@ -1,9 +1,12 @@
 
+
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/home/user/service_results_screen.dart';
+import 'package:flutter_application_1/screens/user/user/service_results_screen.dart';
+import 'package:flutter_application_1/screens/user/user_profile_screen.dart';
 import 'package:flutter_application_1/screens/user/user_requests_screen.dart';
 import 'package:flutter_application_1/views/search/service_search_bar.dart';
 import 'package:flutter_application_1/screens/user/user_requests_screen.dart';
+import 'package:flutter_application_1/screens/user/user_profile_screen.dart';
 
 class UserHomeScreen extends StatefulWidget {
   final String name;
@@ -24,16 +27,13 @@ class _UserHomeScreenState
   // =====================================================
   // VARIABLES
   // =====================================================
-
   int _currentIndex = 0;
-
   final TextEditingController searchController =
       TextEditingController();
 
   // =====================================================
   // DISPOSE
   // =====================================================
-
   @override
   void dispose() {
     searchController.dispose();
@@ -43,7 +43,6 @@ class _UserHomeScreenState
   // =====================================================
   // SEARCH SERVICE
   // =====================================================
-
   void searchService(String value) {
     final String serviceType = value.trim();
 
@@ -62,7 +61,8 @@ class _UserHomeScreenState
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ServiceResultsScreen(
+        builder: (context) =>
+            ServiceResultsScreen(
           serviceType: serviceType,
         ),
       ),
@@ -72,7 +72,6 @@ class _UserHomeScreenState
   // =====================================================
   // HOME SCREEN
   // =====================================================
-
   Widget _homeScreen() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -160,21 +159,27 @@ class _UserHomeScreenState
 
             children: [
 
+              // PLUMBER
               _serviceCard(
                 icon: Icons.plumbing,
                 title: 'Plumber',
               ),
 
+              // ELECTRICIAN
               _serviceCard(
-                icon: Icons.electrical_services,
+                icon:
+                    Icons.electrical_services,
                 title: 'Electrician',
               ),
 
+              // CLEANER
               _serviceCard(
-                icon: Icons.cleaning_services,
+                icon:
+                    Icons.cleaning_services,
                 title: 'Cleaner',
               ),
 
+              // CARPENTER
               _serviceCard(
                 icon: Icons.handyman,
                 title: 'Carpenter',
@@ -219,25 +224,23 @@ class _UserHomeScreenState
   }
 
   // =====================================================
-  // SCREENS
+  // ALL USER SCREENS
   // =====================================================
 
   List<Widget> get _screens {
     return [
+
+      // INDEX 0
+      // HOME
       _homeScreen(),
 
+      // INDEX 1
+      // REQUESTS
       const UserRequestsScreen(),
 
-      const Center(
-        child: Text(
-          'User Profile',
-
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
+      // INDEX 2
+      // PROFILE
+      const UserProfileScreen(),
     ];
   }
 
@@ -254,16 +257,22 @@ class _UserHomeScreenState
       // ===================================================
 
       appBar: AppBar(
-        title: const Text('Suvidha'),
+        title: const Text(
+          'Suvidha',
+        ),
 
         centerTitle: true,
 
         automaticallyImplyLeading: false,
 
         actions: [
+
+          // PROFILE ICON
           IconButton(
             onPressed: () {
-              // Profile will be added later.
+              setState(() {
+                _currentIndex = 2;
+              });
             },
 
             icon: const Icon(
@@ -293,14 +302,19 @@ class _UserHomeScreenState
         currentIndex: _currentIndex,
 
         onTap: (index) {
+
           setState(() {
             _currentIndex = index;
           });
+
         },
 
         items: const [
 
+          // =============================================
           // HOME
+          // =============================================
+
           BottomNavigationBarItem(
             icon: Icon(
               Icons.home_outlined,
@@ -313,7 +327,10 @@ class _UserHomeScreenState
             label: 'Home',
           ),
 
+          // =============================================
           // REQUESTS
+          // =============================================
+
           BottomNavigationBarItem(
             icon: Icon(
               Icons.assignment_outlined,
@@ -326,7 +343,10 @@ class _UserHomeScreenState
             label: 'Requests',
           ),
 
+          // =============================================
           // PROFILE
+          // =============================================
+
           BottomNavigationBarItem(
             icon: Icon(
               Icons.person_outline,
@@ -351,6 +371,7 @@ class _UserHomeScreenState
     required IconData icon,
     required String title,
   }) {
+
     return Card(
       elevation: 2,
 
@@ -364,7 +385,9 @@ class _UserHomeScreenState
             BorderRadius.circular(15),
 
         onTap: () {
+
           searchService(title);
+
         },
 
         child: Column(
@@ -373,6 +396,7 @@ class _UserHomeScreenState
 
           children: [
 
+            // ICON
             Icon(
               icon,
               size: 38,
@@ -380,6 +404,7 @@ class _UserHomeScreenState
 
             const SizedBox(height: 10),
 
+            // SERVICE NAME
             Text(
               title,
 

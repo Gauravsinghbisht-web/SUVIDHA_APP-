@@ -1,9 +1,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../models/service_model.dart';
-import '../../providers/service_provider.dart';
-import '../worker_profile/worker_profile_screen.dart';
+import '../../../models/service_model.dart';
+import '../../../providers/service_provider.dart';
+import '../../../home/worker_profile/worker_profile_screen.dart';
 
 class ServiceResultsScreen extends StatefulWidget {
   final String serviceType;

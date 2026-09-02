@@ -5,6 +5,7 @@ import '../../home/worker_widgets/worker_availability_card.dart';
 import '../../home/worker_widgets/worker_overview.dart';
 import '../../home/worker_widgets/worker_actions.dart';
 import 'package:flutter_application_1/screens/worker/worker_request_screen.dart';
+import 'worker_profile_screen.dart';
 
 class WorkerHomeScreen extends StatefulWidget {
   final String name;
@@ -73,21 +74,17 @@ class _WorkerHomeScreenState
           // =============================================
 
           const WorkerAvailabilityCard(),
-
           const SizedBox(height: 25),
 
           // =============================================
           // OVERVIEW
           // =============================================
-
           const WorkerOverview(),
-
           const SizedBox(height: 30),
 
           // =============================================
           // ACTIONS
           // =============================================
-
           const WorkerActions(),
         ],
       ),
@@ -97,29 +94,18 @@ class _WorkerHomeScreenState
   // =====================================================
   // SCREEN LIST
   // =====================================================
-
   List<Widget> get _screens {
     return [
       _homeScreen(),
 
       const WorkerRequestsScreen(),
-
-      const Center(
-        child: Text(
-          'Worker Profile',
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
+      const WorkerProfileScreen(),
     ];
   }
 
-  // =====================================================
+  // =================================================
   // BUILD
   // =====================================================
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -127,20 +113,15 @@ class _WorkerHomeScreenState
       // =================================================
       // APP BAR
       // =================================================
-
       appBar: AppBar(
         title: const Text('Suvidha'),
-
         centerTitle: true,
-
         automaticallyImplyLeading: false,
-
         actions: [
           IconButton(
             onPressed: () {
               // Profile will be added later.
             },
-
             icon: const Icon(
               Icons.person_outline,
             ),
@@ -151,23 +132,17 @@ class _WorkerHomeScreenState
       // =================================================
       // BODY
       // =================================================
-
       body: IndexedStack(
         index: _currentIndex,
-
         children: _screens,
       ),
 
       // =================================================
       // BOTTOM NAVIGATION
       // =================================================
-
       bottomNavigationBar: BottomNavigationBar(
-
         currentIndex: _currentIndex,
-
         onTap: (index) {
-
           setState(() {
             _currentIndex = index;
           });
@@ -175,16 +150,11 @@ class _WorkerHomeScreenState
         },
 
         items: const [
-
           BottomNavigationBarItem(
             icon: Icon(
-              Icons.home_outlined,
-            ),
-
+              Icons.home_outlined),
             activeIcon: Icon(
-              Icons.home,
-            ),
-
+              Icons.home),
             label: 'Home',
           ),
 
