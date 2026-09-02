@@ -101,7 +101,6 @@ class ServiceRequestProvider extends ChangeNotifier {
       );
     } catch (e) {
       _requests = [];
-
       _errorMessage =
           'Unable to load available requests.';
 
@@ -151,15 +150,14 @@ class ServiceRequestProvider extends ChangeNotifier {
   // =====================================================
   // GET REQUESTS FOR USER
   // =====================================================
-  Future<void> getUserRequests(
+  Future<void> getUserRequests( //is is used to get the requests from worker.
     String userId,
   ) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
     try {
-      _requests =
-          await _requestService.getUserRequests(
+      _requests = await _requestService.getUserRequests(
         userId,
       );
       debugPrint(

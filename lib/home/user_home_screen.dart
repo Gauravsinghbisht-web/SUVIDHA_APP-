@@ -1,7 +1,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/home/user/service_results_screen.dart';
+import 'package:flutter_application_1/screens/user/user_requests_screen.dart';
 import 'package:flutter_application_1/views/search/service_search_bar.dart';
+import 'package:flutter_application_1/screens/user/user_requests_screen.dart';
 
 class UserHomeScreen extends StatefulWidget {
   final String name;
@@ -20,8 +22,10 @@ class _UserHomeScreenState
     extends State<UserHomeScreen> {
 
   // =====================================================
-  // SEARCH CONTROLLER
+  // VARIABLES
   // =====================================================
+
+  int _currentIndex = 0;
 
   final TextEditingController searchController =
       TextEditingController();
@@ -66,6 +70,178 @@ class _UserHomeScreenState
   }
 
   // =====================================================
+  // HOME SCREEN
+  // =====================================================
+
+  Widget _homeScreen() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+
+      child: Column(
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+
+        children: [
+
+          // =============================================
+          // WELCOME
+          // =============================================
+
+          Text(
+            'Hello, ${widget.name} 👋',
+
+            style: const TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          const SizedBox(height: 8),
+
+          Text(
+            'What service do you need today?',
+
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey.shade600,
+            ),
+          ),
+
+          const SizedBox(height: 30),
+
+          // =============================================
+          // SEARCH BAR
+          // =============================================
+
+          ServiceSearchBar(
+            controller: searchController,
+
+            onChanged: (value) {
+              // Search text changes here.
+            },
+
+            onSubmitted: searchService,
+          ),
+
+          const SizedBox(height: 30),
+
+          // =============================================
+          // POPULAR SERVICES
+          // =============================================
+
+          const Text(
+            'Popular Services',
+
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          const SizedBox(height: 15),
+
+          // =============================================
+          // SERVICE GRID
+          // =============================================
+
+          GridView.count(
+            crossAxisCount: 2,
+
+            shrinkWrap: true,
+
+            physics:
+                const NeverScrollableScrollPhysics(),
+
+            crossAxisSpacing: 15,
+
+            mainAxisSpacing: 15,
+
+            childAspectRatio: 1.2,
+
+            children: [
+
+              _serviceCard(
+                icon: Icons.plumbing,
+                title: 'Plumber',
+              ),
+
+              _serviceCard(
+                icon: Icons.electrical_services,
+                title: 'Electrician',
+              ),
+
+              _serviceCard(
+                icon: Icons.cleaning_services,
+                title: 'Cleaner',
+              ),
+
+              _serviceCard(
+                icon: Icons.handyman,
+                title: 'Carpenter',
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 30),
+
+          // =============================================
+          // FIND WORKER BUTTON
+          // =============================================
+
+          SizedBox(
+            width: double.infinity,
+
+            height: 55,
+
+            child: ElevatedButton.icon(
+              onPressed: () {
+                searchService(
+                  searchController.text,
+                );
+              },
+
+              icon: const Icon(
+                Icons.search,
+              ),
+
+              label: const Text(
+                'Find a Worker',
+
+                style: TextStyle(
+                  fontSize: 17,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // =====================================================
+  // SCREENS
+  // =====================================================
+
+  List<Widget> get _screens {
+    return [
+      _homeScreen(),
+
+      const UserRequestsScreen(),
+
+      const Center(
+        child: Text(
+          'User Profile',
+
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    ];
+  }
+
+  // =====================================================
   // BUILD
   // =====================================================
 
@@ -79,6 +255,7 @@ class _UserHomeScreenState
 
       appBar: AppBar(
         title: const Text('Suvidha'),
+
         centerTitle: true,
 
         automaticallyImplyLeading: false,
@@ -86,7 +263,7 @@ class _UserHomeScreenState
         actions: [
           IconButton(
             onPressed: () {
-              // Profile will be added later
+              // Profile will be added later.
             },
 
             icon: const Icon(
@@ -100,138 +277,10 @@ class _UserHomeScreenState
       // BODY
       // ===================================================
 
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+      body: IndexedStack(
+        index: _currentIndex,
 
-        child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
-
-          children: [
-
-            // =============================================
-            // WELCOME
-            // =============================================
-
-            Text(
-              'Hello, ${widget.name} 👋',
-
-              style: const TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            Text(
-              'What service do you need today?',
-
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey.shade600,
-              ),
-            ),
-
-            const SizedBox(height: 30),
-
-            // =============================================
-            // SEARCH BAR
-            // =============================================
-            ServiceSearchBar(
-              controller: searchController,
-              onChanged: (value) {
-                // Search text changes here.
-              },
-              onSubmitted: searchService,
-            ),
-
-            const SizedBox(height: 30),
-
-            // =============================================
-            // POPULAR SERVICES
-            // =============================================
-            const Text(
-              'Popular Services',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 15),
-
-            // =============================================
-            // SERVICE GRID
-            // =============================================
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics:
-                  const NeverScrollableScrollPhysics(),
-
-              crossAxisSpacing: 15,
-
-              mainAxisSpacing: 15,
-
-              childAspectRatio: 1.2,
-
-              children: [
-
-                _serviceCard(
-                  icon: Icons.plumbing,
-                  title: 'Plumber',
-                ),
-
-                _serviceCard(
-                  icon:
-                      Icons.electrical_services,
-                  title: 'Electrician',
-                ),
-
-                _serviceCard(
-                  icon:
-                      Icons.cleaning_services,
-                  title: 'Cleaner',
-                ),
-
-                _serviceCard(
-                  icon: Icons.handyman,
-                  title: 'Carpenter',
-                ),
-              ],
-            ),
-
-            const SizedBox(height: 30),
-
-            // =============================================
-            // FIND WORKER BUTTON
-            // =============================================
-
-            SizedBox(
-              width: double.infinity,
-              height: 55,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  searchService(
-                    searchController.text,
-                  );
-                },
-
-                icon: const Icon(
-                  Icons.search,
-                ),
-
-                label: const Text(
-                  'Find a Worker',
-
-                  style: TextStyle(
-                    fontSize: 17,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
+        children: _screens,
       ),
 
       // ===================================================
@@ -240,10 +289,18 @@ class _UserHomeScreenState
 
       bottomNavigationBar:
           BottomNavigationBar(
-        currentIndex: 0,
+
+        currentIndex: _currentIndex,
+
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
 
         items: const [
 
+          // HOME
           BottomNavigationBarItem(
             icon: Icon(
               Icons.home_outlined,
@@ -256,6 +313,7 @@ class _UserHomeScreenState
             label: 'Home',
           ),
 
+          // REQUESTS
           BottomNavigationBarItem(
             icon: Icon(
               Icons.assignment_outlined,
@@ -268,6 +326,7 @@ class _UserHomeScreenState
             label: 'Requests',
           ),
 
+          // PROFILE
           BottomNavigationBarItem(
             icon: Icon(
               Icons.person_outline,
@@ -305,10 +364,6 @@ class _UserHomeScreenState
             BorderRadius.circular(15),
 
         onTap: () {
-
-          // When user taps a service,
-          // open that service's workers.
-
           searchService(title);
         },
 

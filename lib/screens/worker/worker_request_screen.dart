@@ -31,7 +31,6 @@ class _WorkerRequestsScreenState
   // =====================================================
   // LOAD REQUESTS
   // =====================================================
-
   Future<void> _loadRequests() async {
     await context
         .read<ServiceRequestProvider>()
@@ -48,10 +47,10 @@ class _WorkerRequestsScreenState
 
       body: Consumer<ServiceRequestProvider>(
         builder: (context, provider, child) {
+
           // =================================================
           // LOADING
           // =================================================
-
           if (provider.isLoading) {
             return const Center(
               child: CircularProgressIndicator(),
@@ -61,7 +60,6 @@ class _WorkerRequestsScreenState
           // =================================================
           // ERROR
           // =================================================
-
           if (provider.errorMessage != null) {
             return Center(
               child: Padding(
@@ -96,7 +94,6 @@ class _WorkerRequestsScreenState
           // =================================================
           // NO REQUESTS
           // =================================================
-
           if (provider.requests.isEmpty) {
             return RefreshIndicator(
               onRefresh: _loadRequests,
@@ -162,6 +159,7 @@ class _WorkerRequestsScreenState
                           CrossAxisAlignment.start,
 
                       children: [
+                        
                         // ===================================
                         // SERVICE TYPE
                         // ===================================
@@ -294,7 +292,6 @@ class _WorkerRequestsScreenState
         _loadRequests();
       }
     },
-
     child: const Text(
       'View Details',
     ),
