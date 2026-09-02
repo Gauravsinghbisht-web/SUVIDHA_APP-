@@ -7,100 +7,122 @@ class ServiceRequestProvider extends ChangeNotifier {
   // =====================================================
   // SERVICE
   // =====================================================
-
   final ServiceRequestService _requestService =
       ServiceRequestService();
 
   // =====================================================
   // VARIABLES
   // =====================================================
-
   List<ServiceRequestModel> _requests = [];
-
   bool _isLoading = false;
-
   String? _errorMessage;
 
   // =====================================================
   // GETTERS
   // =====================================================
-
   List<ServiceRequestModel> get requests => _requests;
-
   bool get isLoading => _isLoading;
-
   String? get errorMessage => _errorMessage;
 
   // =====================================================
   // CREATE SERVICE REQUEST
-  // =====================================================
-
+  // ====================================================
   Future<bool> createRequest({
     required String userId,
-    required String workerId,
     required String serviceId,
-    required String serviceType,
+    required String serviceType, required String workerId,
   }) async {
     _isLoading = true;
     _errorMessage = null;
-
     notifyListeners();
-
     try {
-      // Create request object
+      // =================================================
+      // CREATE REQUEST
+      // =================================================
+      //
+      // workerId is empty because the request has not
+      // been accepted by any worker yet.
+      //
+      // =================================================
       final ServiceRequestModel request =
           ServiceRequestModel(
         id: '',
         userId: userId,
-        workerId: workerId,
+        workerId: '',
         serviceId: serviceId,
         serviceType: serviceType,
         status: 'pending',
         createdAt: DateTime.now(),
       );
 
-      // Save request to Firestore
+      // =================================================
+      // SAVE TO FIRESTORE
+      // =================================================
       await _requestService.createRequest(
         request,
       );
-
       debugPrint(
         'Service request created successfully.',
       );
-
       _isLoading = false;
-
       notifyListeners();
-
       return true;
-    } catch (e) {
+    } 
+    catch (e) {
       debugPrint(
         'Create Service Request Error: $e',
       );
 
       _errorMessage =
           'Unable to send service request.';
-
       _isLoading = false;
-
       notifyListeners();
-
       return false;
     }
   }
 
   // =====================================================
+  // GET PENDING REQUESTS
+  // =====================================================
+  //
+  // Used by workers to see available service requests.
+  //
+  // =====================================================
+  Future<void> getPendingRequests() async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+    try {
+      _requests =
+          await _requestService.getPendingRequests();
+      debugPrint(
+        'Pending requests loaded: '
+        '${_requests.length}',
+      );
+    } catch (e) {
+      _requests = [];
+
+      _errorMessage =
+          'Unable to load available requests.';
+
+      debugPrint(
+        'Get Pending Requests Error: $e',
+      );
+    }
+
+    _isLoading = false;
+    notifyListeners();
+  }
+
+  // =====================================================
   // GET REQUESTS FOR WORKER
   // =====================================================
-
   Future<void> getWorkerRequests(
     String workerId,
   ) async {
     _isLoading = true;
     _errorMessage = null;
-
     notifyListeners();
-
     try {
       _requests =
           await _requestService.getWorkerRequests(
@@ -115,7 +137,7 @@ class ServiceRequestProvider extends ChangeNotifier {
       _requests = [];
 
       _errorMessage =
-          'Unable to load service requests.';
+          'Unable to load worker requests.';
 
       debugPrint(
         'Get Worker Requests Error: $e',
@@ -123,83 +145,71 @@ class ServiceRequestProvider extends ChangeNotifier {
     }
 
     _isLoading = false;
-
     notifyListeners();
   }
 
   // =====================================================
   // GET REQUESTS FOR USER
   // =====================================================
-
   Future<void> getUserRequests(
     String userId,
   ) async {
     _isLoading = true;
     _errorMessage = null;
-
     notifyListeners();
-
     try {
       _requests =
           await _requestService.getUserRequests(
         userId,
       );
-
       debugPrint(
         'User requests loaded: '
         '${_requests.length}',
       );
     } catch (e) {
       _requests = [];
-
       _errorMessage =
           'Unable to load your service requests.';
-
       debugPrint(
         'Get User Requests Error: $e',
       );
     }
-
     _isLoading = false;
-
     notifyListeners();
   }
 
   // =====================================================
   // ACCEPT REQUEST
   // =====================================================
-
-  Future<bool> acceptRequest(
-    String requestId,
-  ) async {
+  Future<bool> acceptRequest({
+    required String requestId,
+    required String workerId,
+  }) async {
     try {
-      await _requestService.updateRequestStatus(
-        requestId,
-        'accepted',
+      // =================================================
+      // UPDATE FIRESTORE
+      // =================================================
+      await _requestService.acceptRequest(
+        requestId: requestId,
+        workerId: workerId,
       );
 
-      // Update local list
+      // =================================================
+      // UPDATE LOCAL LIST
+      // =================================================
       final int index = _requests.indexWhere(
         (request) => request.id == requestId,
       );
 
       if (index != -1) {
         final oldRequest = _requests[index];
-
         _requests[index] =
-            ServiceRequestModel(
-          id: oldRequest.id,
-          userId: oldRequest.userId,
-          workerId: oldRequest.workerId,
-          serviceId: oldRequest.serviceId,
-          serviceType: oldRequest.serviceType,
+            oldRequest.copyWith(
+          workerId: workerId,
           status: 'accepted',
-          createdAt: oldRequest.createdAt,
         );
       }
-
       notifyListeners();
-
       return true;
     } catch (e) {
       debugPrint(
@@ -208,9 +218,7 @@ class ServiceRequestProvider extends ChangeNotifier {
 
       _errorMessage =
           'Unable to accept request.';
-
       notifyListeners();
-
       return false;
     }
   }
@@ -218,49 +226,75 @@ class ServiceRequestProvider extends ChangeNotifier {
   // =====================================================
   // REJECT REQUEST
   // =====================================================
-
   Future<bool> rejectRequest(
     String requestId,
   ) async {
     try {
-      await _requestService.updateRequestStatus(
+      // =================================================
+      // UPDATE FIRESTORE
+      // =================================================
+      await _requestService.rejectRequest(
         requestId,
-        'rejected',
       );
 
-      // Update local list
+      // =================================================
+      // UPDATE LOCAL LIST
+      // ================================================
       final int index = _requests.indexWhere(
         (request) => request.id == requestId,
       );
 
       if (index != -1) {
         final oldRequest = _requests[index];
-
         _requests[index] =
-            ServiceRequestModel(
-          id: oldRequest.id,
-          userId: oldRequest.userId,
-          workerId: oldRequest.workerId,
-          serviceId: oldRequest.serviceId,
-          serviceType: oldRequest.serviceType,
+            oldRequest.copyWith(
           status: 'rejected',
-          createdAt: oldRequest.createdAt,
         );
       }
 
       notifyListeners();
-
       return true;
     } catch (e) {
       debugPrint(
         'Reject Request Error: $e',
       );
-
       _errorMessage =
           'Unable to reject request.';
-
       notifyListeners();
+      return false;
+    }
+  }
 
+  // =====================================================
+  // UPDATE REQUEST STATUS
+  // =====================================================
+  Future<bool> updateRequestStatus(
+    String requestId,
+    String status,
+  ) async {
+    try {
+      await _requestService.updateRequestStatus(
+        requestId,
+        status,
+      );
+      final int index = _requests.indexWhere(
+        (request) => request.id == requestId,
+      );
+      if (index != -1) {
+        _requests[index] =
+            _requests[index].copyWith(
+          status: status,
+        );
+      }
+      notifyListeners();
+      return true;
+    } catch (e) {
+      debugPrint(
+        'Update Request Status Error: $e',
+      );
+      _errorMessage =
+          'Unable to update request.';
+      notifyListeners();
       return false;
     }
   }
@@ -268,12 +302,9 @@ class ServiceRequestProvider extends ChangeNotifier {
   // =====================================================
   // CLEAR REQUESTS
   // =====================================================
-
   void clearRequests() {
     _requests = [];
-
     _errorMessage = null;
-
     notifyListeners();
   }
 }

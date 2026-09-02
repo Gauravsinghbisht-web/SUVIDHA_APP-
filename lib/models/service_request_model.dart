@@ -52,4 +52,28 @@ class ServiceRequestModel {
       'createdAt': Timestamp.fromDate(createdAt),
     };
   }
+
+  // =====================================================
+  // COPY WITH
+  // =====================================================
+  ServiceRequestModel copyWith({
+    String? id,
+    String? userId,
+    String? workerId,
+    String? serviceId,
+    String? serviceType,
+    String? status,
+    DateTime? createdAt,
+  }) {
+    return ServiceRequestModel(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      workerId: workerId ?? this.workerId,
+      serviceId: serviceId ?? this.serviceId,
+      serviceType: serviceType ?? this.serviceType,
+      status: status ?? this.status,
+      createdAt: createdAt ?? this.createdAt,
+    );
+  }
 }
+
