@@ -1,10 +1,12 @@
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/providers/service_request_provider.dart';
 import 'package:provider/provider.dart';
+import '../../models/chat_model.dart';
 import '../../models/service_request_model.dart';
 import '../../providers/service_request_provider.dart';
+import '../../services/chat_service.dart';
+import '../chat/chat_screen.dart';
 
 class WorkerRequestDetailsScreen extends StatefulWidget {
   final ServiceRequestModel request;
@@ -21,7 +23,6 @@ class WorkerRequestDetailsScreen extends StatefulWidget {
 
 class _WorkerRequestDetailsScreenState
     extends State<WorkerRequestDetailsScreen> {
-
   bool _isProcessing = false;
 
   // =====================================================
@@ -33,9 +34,7 @@ class _WorkerRequestDetailsScreenState
         FirebaseAuth.instance.currentUser;
 
     if (currentUser == null) {
-      _showMessage(
-        'Worker is not logged in.',
-      );
+      _showMessage('Worker is not logged in.');
       return;
     }
 
@@ -43,31 +42,68 @@ class _WorkerRequestDetailsScreenState
       _isProcessing = true;
     });
 
-    final bool success =
-        await context
-            .read<ServiceRequestProvider>()
-            .acceptRequest(
-              requestId: widget.request.id,
-              workerId: currentUser.uid,
-            );
+    try {
+      // =============================================
+      // STEP 1: ACCEPT SERVICE REQUEST
+      // =============================================
 
-    if (!mounted) return;
+      final bool success =
+          await context
+              .read<ServiceRequestProvider>()
+              .acceptRequest(
+                requestId: widget.request.id,
+                workerId: currentUser.uid,
+              );
 
-    setState(() {
-      _isProcessing = false;
-    });
+      if (!success) {
+        _showMessage('Unable to accept request.');
+        return;
+      }
 
-    if (success) {
-      _showMessage(
-        'Request accepted successfully.',
+      // =============================================
+      // STEP 2: CREATE CHAT
+      // =============================================
+
+      final ChatService chatService = ChatService();
+
+      final String chatId =
+          await chatService.createChat(
+        userId: widget.request.userId,
+        workerId: currentUser.uid,
+        serviceRequestId: widget.request.id,
       );
 
-      // Go back to Requests screen.
+      debugPrint(
+        'Chat created successfully: $chatId',
+      );
+
+      // =============================================
+      // SUCCESS
+      // =============================================
+
+      if (!mounted) return;
+
+      _showMessage(
+        'Request accepted and chat created successfully.',
+      );
+
       Navigator.pop(context, true);
-    } else {
-      _showMessage(
-        'Unable to accept request.',
+    } catch (e) {
+      debugPrint(
+        'Accept request/chat error: $e',
       );
+
+      if (!mounted) return;
+
+      _showMessage(
+        'Chat error: $e',
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessing = false;
+        });
+      }
     }
   }
 
@@ -102,6 +138,50 @@ class _WorkerRequestDetailsScreenState
     } else {
       _showMessage(
         'Unable to reject request.',
+      );
+    }
+  }
+
+  // =====================================================
+  // OPEN CHAT
+  // =====================================================
+
+  Future<void> _openChat() async {
+    try {
+      final ChatService chatService =
+          ChatService();
+
+      final ChatModel? chat =
+          await chatService.getChatByRequest(
+        widget.request.id,
+      );
+
+      if (!mounted) return;
+
+      if (chat == null) {
+        _showMessage(
+          'Chat not found.',
+        );
+        return;
+      }
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ChatScreen(
+            chat: chat,
+          ),
+        ),
+      );
+    } catch (e) {
+      debugPrint(
+        'Open chat error: $e',
+      );
+
+      if (!mounted) return;
+
+      _showMessage(
+        'Unable to open chat.',
       );
     }
   }
@@ -149,6 +229,9 @@ class _WorkerRequestDetailsScreenState
   Widget build(BuildContext context) {
     final request = widget.request;
 
+    final String status =
+        request.status.toLowerCase();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -165,7 +248,6 @@ class _WorkerRequestDetailsScreenState
               CrossAxisAlignment.start,
 
           children: [
-
             // =============================================
             // SERVICE ICON
             // =============================================
@@ -173,7 +255,6 @@ class _WorkerRequestDetailsScreenState
             Center(
               child: CircleAvatar(
                 radius: 45,
-
                 child: const Icon(
                   Icons.home_repair_service,
                   size: 45,
@@ -206,8 +287,7 @@ class _WorkerRequestDetailsScreenState
 
             _detailCard(
               title: 'Request Status',
-              value: request.status
-                  .toUpperCase(),
+              value: request.status.toUpperCase(),
               icon: Icons.info_outline,
             ),
 
@@ -252,13 +332,12 @@ class _WorkerRequestDetailsScreenState
             const SizedBox(height: 30),
 
             // =============================================
-            // ACTION BUTTONS
+            // PENDING ACTION BUTTONS
             // =============================================
 
-            if (request.status == 'pending')
+            if (status == 'pending')
               Row(
                 children: [
-
                   // =======================================
                   // REJECT
                   // =======================================
@@ -309,7 +388,6 @@ class _WorkerRequestDetailsScreenState
                           ? const SizedBox(
                               height: 20,
                               width: 20,
-
                               child:
                                   CircularProgressIndicator(
                                 strokeWidth: 2,
@@ -321,6 +399,38 @@ class _WorkerRequestDetailsScreenState
                     ),
                   ),
                 ],
+              ),
+
+            // =============================================
+            // ACCEPTED → CHAT BUTTON
+            // =============================================
+
+            if (status == 'accepted')
+              SizedBox(
+                width: double.infinity,
+
+                child: ElevatedButton.icon(
+                  onPressed:
+                      _isProcessing
+                          ? null
+                          : _openChat,
+
+                  icon: const Icon(
+                    Icons.chat,
+                  ),
+
+                  label: const Text(
+                    'Chat with User',
+                  ),
+
+                  style:
+                      ElevatedButton.styleFrom(
+                    padding:
+                        const EdgeInsets.symmetric(
+                      vertical: 15,
+                    ),
+                  ),
+                ),
               ),
           ],
         ),
@@ -345,7 +455,6 @@ class _WorkerRequestDetailsScreenState
 
         child: Row(
           children: [
-
             Icon(
               icon,
               size: 28,
@@ -359,7 +468,6 @@ class _WorkerRequestDetailsScreenState
                     CrossAxisAlignment.start,
 
                 children: [
-
                   Text(
                     title,
 
@@ -390,4 +498,3 @@ class _WorkerRequestDetailsScreenState
     );
   }
 }
-

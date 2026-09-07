@@ -1,12 +1,10 @@
 
-
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screens/user/user/service_results_screen.dart';
+import 'package:flutter_application_1/screens/user/user_chat_screen.dart';
 import 'package:flutter_application_1/screens/user/user_profile_screen.dart';
 import 'package:flutter_application_1/screens/user/user_requests_screen.dart';
 import 'package:flutter_application_1/views/search/service_search_bar.dart';
-import 'package:flutter_application_1/screens/user/user_requests_screen.dart';
-import 'package:flutter_application_1/screens/user/user_profile_screen.dart';
 
 class UserHomeScreen extends StatefulWidget {
   final String name;
@@ -27,13 +25,16 @@ class _UserHomeScreenState
   // =====================================================
   // VARIABLES
   // =====================================================
+
   int _currentIndex = 0;
+
   final TextEditingController searchController =
       TextEditingController();
 
   // =====================================================
   // DISPOSE
   // =====================================================
+
   @override
   void dispose() {
     searchController.dispose();
@@ -43,6 +44,7 @@ class _UserHomeScreenState
   // =====================================================
   // SEARCH SERVICE
   // =====================================================
+
   void searchService(String value) {
     final String serviceType = value.trim();
 
@@ -72,6 +74,7 @@ class _UserHomeScreenState
   // =====================================================
   // HOME SCREEN
   // =====================================================
+
   Widget _homeScreen() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
@@ -88,7 +91,6 @@ class _UserHomeScreenState
 
           Text(
             'Hello, ${widget.name} 👋',
-
             style: const TextStyle(
               fontSize: 26,
               fontWeight: FontWeight.bold,
@@ -99,7 +101,6 @@ class _UserHomeScreenState
 
           Text(
             'What service do you need today?',
-
             style: TextStyle(
               fontSize: 16,
               color: Colors.grey.shade600,
@@ -130,7 +131,6 @@ class _UserHomeScreenState
 
           const Text(
             'Popular Services',
-
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
@@ -167,15 +167,13 @@ class _UserHomeScreenState
 
               // ELECTRICIAN
               _serviceCard(
-                icon:
-                    Icons.electrical_services,
+                icon: Icons.electrical_services,
                 title: 'Electrician',
               ),
 
               // CLEANER
               _serviceCard(
-                icon:
-                    Icons.cleaning_services,
+                icon: Icons.cleaning_services,
                 title: 'Cleaner',
               ),
 
@@ -211,7 +209,6 @@ class _UserHomeScreenState
 
               label: const Text(
                 'Find a Worker',
-
                 style: TextStyle(
                   fontSize: 17,
                 ),
@@ -239,6 +236,10 @@ class _UserHomeScreenState
       const UserRequestsScreen(),
 
       // INDEX 2
+      // CHATS
+      UserChatScreen(),
+
+      // INDEX 3
       // PROFILE
       const UserProfileScreen(),
     ];
@@ -267,11 +268,14 @@ class _UserHomeScreenState
 
         actions: [
 
+          // =============================================
           // PROFILE ICON
+          // =============================================
+
           IconButton(
             onPressed: () {
               setState(() {
-                _currentIndex = 2;
+                _currentIndex = 3;
               });
             },
 
@@ -299,15 +303,39 @@ class _UserHomeScreenState
       bottomNavigationBar:
           BottomNavigationBar(
 
+        // ===============================================
+        // CURRENT INDEX
+        // ===============================================
+
         currentIndex: _currentIndex,
 
-        onTap: (index) {
+        // ===============================================
+        // SELECTED ITEM COLOR
+        // ===============================================
 
+        selectedItemColor:
+            Theme.of(context).colorScheme.primary,
+
+        // ===============================================
+        // UNSELECTED ITEM COLOR
+        // ===============================================
+
+        unselectedItemColor:
+            Colors.grey,
+
+        // ===============================================
+        // TAP
+        // ===============================================
+
+        onTap: (index) {
           setState(() {
             _currentIndex = index;
           });
-
         },
+
+        // ===============================================
+        // ITEMS
+        // ===============================================
 
         items: const [
 
@@ -344,6 +372,22 @@ class _UserHomeScreenState
           ),
 
           // =============================================
+          // CHATS
+          // =============================================
+
+          BottomNavigationBarItem(
+            icon: Icon(
+              Icons.chat_outlined,
+            ),
+
+            activeIcon: Icon(
+              Icons.chat,
+            ),
+
+            label: 'Chats',
+          ),
+
+          // =============================================
           // PROFILE
           // =============================================
 
@@ -371,7 +415,6 @@ class _UserHomeScreenState
     required IconData icon,
     required String title,
   }) {
-
     return Card(
       elevation: 2,
 
@@ -385,9 +428,7 @@ class _UserHomeScreenState
             BorderRadius.circular(15),
 
         onTap: () {
-
           searchService(title);
-
         },
 
         child: Column(
@@ -396,7 +437,10 @@ class _UserHomeScreenState
 
           children: [
 
+            // ===========================================
             // ICON
+            // ===========================================
+
             Icon(
               icon,
               size: 38,
@@ -404,7 +448,10 @@ class _UserHomeScreenState
 
             const SizedBox(height: 10),
 
+            // ===========================================
             // SERVICE NAME
+            // ===========================================
+
             Text(
               title,
 
@@ -419,4 +466,3 @@ class _UserHomeScreenState
     );
   }
 }
-
