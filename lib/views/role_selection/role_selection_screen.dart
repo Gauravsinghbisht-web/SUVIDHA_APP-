@@ -43,6 +43,8 @@ class RoleSelectionScreen extends StatelessWidget {
                   print('Selected role: $role');
                   Navigator.push(
                     context,
+                    
+                    //it is used for move to next screen and pass the role to login screen 
                     MaterialPageRoute(
                       builder: (context) => LoginScreen(role: role),
                     ),
@@ -60,6 +62,8 @@ class RoleSelectionScreen extends StatelessWidget {
                   print('Selected role: $role');
                   Navigator.push(
                     context,
+
+                    // it is used for move to next screen and pass the role to login screen.
                     MaterialPageRoute(
                       builder: (context) => LoginScreen(role : role),
                     ),

@@ -1,12 +1,13 @@
-import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
+import 'package:flutter/material.dart';
+import 'package:flutter_application_1/home/worker_profile/worker_profile_screen.dart';
+import 'package:provider/provider.dart';
 import '../../models/service_model.dart';
 import '../../providers/service_provider.dart';
+import '../../screens/worker/worker_profile_screen.dart' hide WorkerProfileScreen;
 
 class ServiceResultsScreen extends StatefulWidget {
   final String serviceType;
-
   const ServiceResultsScreen({
     super.key,
     required this.serviceType,
@@ -23,7 +24,6 @@ class _ServiceResultsScreenState
   // =====================================================
   // LOAD SERVICES
   // =====================================================
-
   @override
   void initState() {
     super.initState();
@@ -38,7 +38,6 @@ class _ServiceResultsScreenState
   // =====================================================
   // BUILD
   // =====================================================
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -59,7 +58,6 @@ class _ServiceResultsScreenState
           // =================================================
           // LOADING
           // =================================================
-
           if (provider.isLoading) {
             return const Center(
               child: CircularProgressIndicator(),
@@ -69,7 +67,6 @@ class _ServiceResultsScreenState
           // =================================================
           // ERROR
           // =================================================
-
           if (provider.errorMessage != null) {
             return Center(
               child: Padding(
@@ -88,24 +85,19 @@ class _ServiceResultsScreenState
           // =================================================
           // NO RESULTS
           // =================================================
-
           if (provider.services.isEmpty) {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(20),
-
                 child: Column(
                   mainAxisAlignment:
                       MainAxisAlignment.center,
-
                   children: [
                     const Icon(
                       Icons.search_off,
                       size: 70,
                     ),
-
                     const SizedBox(height: 20),
-
                     Text(
                       'No ${widget.serviceType} workers found.',
                       textAlign: TextAlign.center,
@@ -117,12 +109,9 @@ class _ServiceResultsScreenState
                     ),
 
                     const SizedBox(height: 10),
-
                     Text(
                       'Try searching for another service.',
-
                       textAlign: TextAlign.center,
-
                       style: TextStyle(
                         color: Colors.grey.shade600,
                       ),
@@ -136,19 +125,15 @@ class _ServiceResultsScreenState
           // =================================================
           // RESULTS
           // =================================================
-
           return ListView.builder(
             padding: const EdgeInsets.all(20),
-
             itemCount: provider.services.length,
-
             itemBuilder: (
               context,
               index,
             ) {
               final ServiceModel service =
                   provider.services[index];
-
               return _serviceCard(service);
             },
           );
@@ -160,7 +145,6 @@ class _ServiceResultsScreenState
   // =====================================================
   // SERVICE CARD
   // =====================================================
-
   Widget _serviceCard(
     ServiceModel service,
   ) {
@@ -187,29 +171,24 @@ class _ServiceResultsScreenState
             // =================================================
             // WORKER + SERVICE
             // =================================================
-
             Row(
               children: [
-                CircleAvatar(
+                const CircleAvatar(
                   radius: 28,
-
-                  child: const Icon(
+                  child: Icon(
                     Icons.person,
                     size: 30,
                   ),
                 ),
 
                 const SizedBox(width: 15),
-
                 Expanded(
                   child: Column(
                     crossAxisAlignment:
                         CrossAxisAlignment.start,
-
                     children: [
                       Text(
                         service.serviceType,
-
                         style: const TextStyle(
                           fontSize: 19,
                           fontWeight: FontWeight.bold,
@@ -217,15 +196,11 @@ class _ServiceResultsScreenState
                       ),
 
                       const SizedBox(height: 5),
-
                       Text(
                         'Worker ID: ${service.workerId}',
-
                         maxLines: 1,
-
                         overflow:
                             TextOverflow.ellipsis,
-
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey.shade600,
@@ -242,7 +217,6 @@ class _ServiceResultsScreenState
             // =================================================
             // LOCATION
             // =================================================
-
             Row(
               children: [
                 const Icon(
@@ -251,7 +225,6 @@ class _ServiceResultsScreenState
                 ),
 
                 const SizedBox(width: 8),
-
                 Expanded(
                   child: Text(
                     service.location,
@@ -265,7 +238,6 @@ class _ServiceResultsScreenState
             // =================================================
             // EXPERIENCE
             // =================================================
-
             Row(
               children: [
                 const Icon(
@@ -274,7 +246,6 @@ class _ServiceResultsScreenState
                 ),
 
                 const SizedBox(width: 8),
-
                 Text(
                   service.experience,
                 ),
@@ -286,7 +257,6 @@ class _ServiceResultsScreenState
             // =================================================
             // PRICE
             // =================================================
-
             Row(
               children: [
                 const Icon(
@@ -295,7 +265,6 @@ class _ServiceResultsScreenState
                 ),
 
                 const SizedBox(width: 8),
-
                 Text(
                   '₹${service.price}',
                 ),
@@ -307,15 +276,11 @@ class _ServiceResultsScreenState
             // =================================================
             // DESCRIPTION
             // =================================================
-
             Text(
               service.description,
-
               maxLines: 2,
-
               overflow:
                   TextOverflow.ellipsis,
-
               style: TextStyle(
                 color: Colors.grey.shade700,
               ),
@@ -326,18 +291,18 @@ class _ServiceResultsScreenState
             // =================================================
             // VIEW WORKER PROFILE
             // =================================================
-
             SizedBox(
               width: double.infinity,
               height: 48,
-
               child: ElevatedButton(
                 onPressed: () {
-                  ScaffoldMessenger.of(context)
-                      .showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                        'Worker profile coming next.',
+                  // Open the selected worker's profile
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          WorkerProfileScreen(
+                        service: service,
                       ),
                     ),
                   );

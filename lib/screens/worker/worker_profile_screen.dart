@@ -15,7 +15,6 @@ class WorkerProfileScreen extends StatefulWidget {
 
 class _WorkerProfileScreenState
     extends State<WorkerProfileScreen> {
-
   // =====================================================
   // FIREBASE
   // =====================================================
@@ -31,6 +30,8 @@ class _WorkerProfileScreenState
   // =====================================================
 
   bool _isLoading = true;
+  bool _isAvailable = true;
+  bool _isUpdatingAvailability = false;
 
   String _name = '';
   String _email = '';
@@ -86,12 +87,19 @@ class _WorkerProfileScreenState
           _phone =
               data['phone'] ?? '';
 
+          // If the field does not exist,
+          // worker will be available by default.
+          _isAvailable =
+              data['isAvailable'] ?? true;
+
           _isLoading = false;
         });
       } else {
         setState(() {
           _email =
               currentUser.email ?? '';
+
+          _isAvailable = true;
 
           _isLoading = false;
         });
@@ -104,6 +112,74 @@ class _WorkerProfileScreenState
       setState(() {
         _isLoading = false;
       });
+    }
+  }
+
+  // =====================================================
+  // UPDATE AVAILABILITY
+  // =====================================================
+
+  Future<void> _updateAvailability(
+    bool value,
+  ) async {
+    final User? currentUser =
+        _auth.currentUser;
+
+    if (currentUser == null) {
+      return;
+    }
+
+    setState(() {
+      _isUpdatingAvailability = true;
+    });
+
+    try {
+      await _firestore
+          .collection('users')
+          .doc(currentUser.uid)
+          .set(
+        {
+          'isAvailable': value,
+        },
+        SetOptions(merge: true),
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _isAvailable = value;
+        _isUpdatingAvailability = false;
+      });
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+        SnackBar(
+          content: Text(
+            value
+                ? 'You are now available.'
+                : 'You are now unavailable.',
+          ),
+        ),
+      );
+    } catch (e) {
+      debugPrint(
+        'Update Availability Error: $e',
+      );
+
+      if (!mounted) return;
+
+      setState(() {
+        _isUpdatingAvailability = false;
+      });
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Failed to update availability.',
+          ),
+        ),
+      );
     }
   }
 
@@ -139,10 +215,8 @@ class _WorkerProfileScreenState
         title: const Text(
           'Worker Profile',
         ),
-
         centerTitle: true,
       ),
-
       body: _isLoading
           ? const Center(
               child:
@@ -151,17 +225,14 @@ class _WorkerProfileScreenState
           : SingleChildScrollView(
               padding:
                   const EdgeInsets.all(20),
-
               child: Column(
                 children: [
-
                   // =====================================
                   // PROFILE IMAGE
                   // =====================================
 
                   const CircleAvatar(
                     radius: 55,
-
                     child: Icon(
                       Icons.person,
                       size: 60,
@@ -178,8 +249,8 @@ class _WorkerProfileScreenState
                     _name.isEmpty
                         ? 'Worker'
                         : _name,
-
-                    style: const TextStyle(
+                    style:
+                        const TextStyle(
                       fontSize: 25,
                       fontWeight:
                           FontWeight.bold,
@@ -187,6 +258,14 @@ class _WorkerProfileScreenState
                   ),
 
                   const SizedBox(height: 30),
+
+                  // =====================================
+                  // AVAILABILITY
+                  // =====================================
+
+                  _availabilityCard(),
+
+                  const SizedBox(height: 20),
 
                   // =====================================
                   // EMAIL
@@ -223,23 +302,24 @@ class _WorkerProfileScreenState
                   // =====================================
 
                   SizedBox(
-                    width: double.infinity,
+                    width:
+                        double.infinity,
                     height: 52,
-
                     child:
-                        ElevatedButton.icon(
+                        ElevatedButton
+                            .icon(
                       onPressed: () {
                         // Edit Profile
                         // will be added next.
                       },
-
                       icon: const Icon(
                         Icons.edit,
                       ),
-
-                      label: const Text(
+                      label:
+                          const Text(
                         'Edit Profile',
-                        style: TextStyle(
+                        style:
+                            TextStyle(
                           fontSize: 16,
                         ),
                       ),
@@ -253,20 +333,21 @@ class _WorkerProfileScreenState
                   // =====================================
 
                   SizedBox(
-                    width: double.infinity,
+                    width:
+                        double.infinity,
                     height: 52,
-
                     child:
-                        OutlinedButton.icon(
+                        OutlinedButton
+                            .icon(
                       onPressed: _logout,
-
                       icon: const Icon(
                         Icons.logout,
                       ),
-
-                      label: const Text(
+                      label:
+                          const Text(
                         'Logout',
-                        style: TextStyle(
+                        style:
+                            TextStyle(
                           fontSize: 16,
                         ),
                       ),
@@ -275,6 +356,102 @@ class _WorkerProfileScreenState
                 ],
               ),
             ),
+    );
+  }
+
+  // =====================================================
+  // AVAILABILITY CARD
+  // =====================================================
+
+  Widget _availabilityCard() {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.circular(15),
+      ),
+      child: Padding(
+        padding:
+            const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              child: Icon(
+                _isAvailable
+                    ? Icons.check_circle
+                    : Icons.cancel,
+              ),
+            ),
+
+            const SizedBox(width: 15),
+
+            Expanded(
+              child: Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Worker Availability',
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.grey,
+                    ),
+                  ),
+
+                  const SizedBox(height: 5),
+
+                  Text(
+                    _isAvailable
+                        ? 'Available'
+                        : 'Unavailable',
+                    style:
+                        const TextStyle(
+                      fontSize: 17,
+                      fontWeight:
+                          FontWeight.bold,
+                    ),
+                  ),
+
+                  const SizedBox(height: 3),
+
+                  Text(
+                    _isAvailable
+                        ? 'Users can request your service.'
+                        : 'Users cannot request your service.',
+                    style:
+                        const TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // =========================================
+            // SWITCH
+            // =========================================
+
+            _isUpdatingAvailability
+                ? const SizedBox(
+                    width: 24,
+                    height: 24,
+                    child:
+                        CircularProgressIndicator(
+                      strokeWidth: 2,
+                    ),
+                  )
+                : Switch(
+                    value: _isAvailable,
+                    onChanged:
+                        _updateAvailability,
+                  ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -289,19 +466,15 @@ class _WorkerProfileScreenState
   }) {
     return Card(
       elevation: 2,
-
       shape: RoundedRectangleBorder(
         borderRadius:
             BorderRadius.circular(15),
       ),
-
       child: Padding(
         padding:
             const EdgeInsets.all(16),
-
         child: Row(
           children: [
-
             CircleAvatar(
               child: Icon(icon),
             ),
@@ -312,12 +485,9 @@ class _WorkerProfileScreenState
               child: Column(
                 crossAxisAlignment:
                     CrossAxisAlignment.start,
-
                 children: [
-
                   Text(
                     title,
-
                     style: TextStyle(
                       fontSize: 13,
                       color:
@@ -329,7 +499,6 @@ class _WorkerProfileScreenState
 
                   Text(
                     value,
-
                     style:
                         const TextStyle(
                       fontSize: 16,
@@ -346,4 +515,3 @@ class _WorkerProfileScreenState
     );
   }
 }
-

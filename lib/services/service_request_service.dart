@@ -6,23 +6,32 @@ class ServiceRequestService {
   // =====================================================
   // FIRESTORE
   // =====================================================
+
   final FirebaseFirestore _firestore =
       FirebaseFirestore.instance;
 
   // =====================================================
   // CREATE SERVICE REQUEST
   // =====================================================
+
   Future<void> createRequest(
     ServiceRequestModel request,
   ) async {
     try {
       await _firestore
           .collection('service_requests')
-          .add(request.toMap());
+          .add(
+        request.toMap(),
+      );
 
-      print('Service request created successfully.');
+      print(
+        'Service request created successfully.',
+      );
     } catch (e) {
-      print('Create Service Request Error: $e');
+      print(
+        'Create Service Request Error: $e',
+      );
+
       rethrow;
     }
   }
@@ -31,27 +40,30 @@ class ServiceRequestService {
   // GET PENDING REQUESTS
   // =====================================================
   //
-  // These requests are visible to workers.
+  // Gets pending requests.
   //
-  // Example:
-  //
-  // status = pending
-  // workerId = ''
+  // A request now contains the workerId of the
+  // worker selected by the user.
   //
   // =====================================================
-  Future<List<ServiceRequestModel>> getPendingRequests() async {
+
+  Future<List<ServiceRequestModel>>
+      getPendingRequests() async {
     try {
-      final QuerySnapshot snapshot = await _firestore
-          .collection('service_requests')
-          .where(
-            'status',
-            isEqualTo: 'pending',
-          )
-          .get();
+      final QuerySnapshot snapshot =
+          await _firestore
+              .collection('service_requests')
+              .where(
+                'status',
+                isEqualTo: 'pending',
+              )
+              .get();
 
       print(
-        'Pending requests found: ${snapshot.docs.length}',
+        'Pending requests found: '
+        '${snapshot.docs.length}',
       );
+
       return snapshot.docs.map((doc) {
         return ServiceRequestModel.fromMap(
           doc.id,
@@ -59,7 +71,10 @@ class ServiceRequestService {
         );
       }).toList();
     } catch (e) {
-      print('Get Pending Requests Error: $e');
+      print(
+        'Get Pending Requests Error: $e',
+      );
+
       rethrow;
     }
   }
@@ -67,25 +82,26 @@ class ServiceRequestService {
   // =====================================================
   // GET REQUESTS FOR WORKER
   // =====================================================
-  //
-  // Gets requests already accepted by this worker.
-  //
-  // =====================================================
-  Future<List<ServiceRequestModel>> getWorkerRequests(
+
+  Future<List<ServiceRequestModel>>
+      getWorkerRequests(
     String workerId,
   ) async {
     try {
-      final QuerySnapshot snapshot = await _firestore
-          .collection('service_requests')
-          .where(
-            'workerId',
-            isEqualTo: workerId,
-          )
-          .get();
+      final QuerySnapshot snapshot =
+          await _firestore
+              .collection('service_requests')
+              .where(
+                'workerId',
+                isEqualTo: workerId,
+              )
+              .get();
 
       print(
-        'Worker requests found: ${snapshot.docs.length}',
+        'Worker requests found: '
+        '${snapshot.docs.length}',
       );
+
       return snapshot.docs.map((doc) {
         return ServiceRequestModel.fromMap(
           doc.id,
@@ -93,7 +109,10 @@ class ServiceRequestService {
         );
       }).toList();
     } catch (e) {
-      print('Get Worker Requests Error: $e');
+      print(
+        'Get Worker Requests Error: $e',
+      );
+
       rethrow;
     }
   }
@@ -101,21 +120,26 @@ class ServiceRequestService {
   // =====================================================
   // GET REQUESTS FOR USER
   // =====================================================
-  Future<List<ServiceRequestModel>> getUserRequests(
+
+  Future<List<ServiceRequestModel>>
+      getUserRequests(
     String userId,
   ) async {
     try {
-      final QuerySnapshot snapshot = await _firestore
-          .collection('service_requests')
-          .where(
-            'userId',
-            isEqualTo: userId,
-          )
-          .get();
+      final QuerySnapshot snapshot =
+          await _firestore
+              .collection('service_requests')
+              .where(
+                'userId',
+                isEqualTo: userId,
+              )
+              .get();
 
       print(
-        'User requests found: ${snapshot.docs.length}',
+        'User requests found: '
+        '${snapshot.docs.length}',
       );
+
       return snapshot.docs.map((doc) {
         return ServiceRequestModel.fromMap(
           doc.id,
@@ -123,7 +147,10 @@ class ServiceRequestService {
         );
       }).toList();
     } catch (e) {
-      print('Get User Requests Error: $e');
+      print(
+        'Get User Requests Error: $e',
+      );
+
       rethrow;
     }
   }
@@ -131,13 +158,7 @@ class ServiceRequestService {
   // =====================================================
   // ACCEPT REQUEST
   // =====================================================
-  //
-  // When a worker accepts:
-  //
-  // status   = accepted
-  // workerId = current worker UID
-  //
-  // =====================================================
+
   Future<void> acceptRequest({
     required String requestId,
     required String workerId,
@@ -150,11 +171,15 @@ class ServiceRequestService {
         'status': 'accepted',
         'workerId': workerId,
       });
+
       print(
         'Request accepted by worker: $workerId',
       );
     } catch (e) {
-      print('Accept Request Error: $e');
+      print(
+        'Accept Request Error: $e',
+      );
+
       rethrow;
     }
   }
@@ -162,6 +187,7 @@ class ServiceRequestService {
   // =====================================================
   // REJECT REQUEST
   // =====================================================
+
   Future<void> rejectRequest(
     String requestId,
   ) async {
@@ -172,9 +198,15 @@ class ServiceRequestService {
           .update({
         'status': 'rejected',
       });
-      print('Request rejected.');
+
+      print(
+        'Request rejected.',
+      );
     } catch (e) {
-      print('Reject Request Error: $e');
+      print(
+        'Reject Request Error: $e',
+      );
+
       rethrow;
     }
   }
@@ -182,6 +214,7 @@ class ServiceRequestService {
   // =====================================================
   // UPDATE REQUEST STATUS
   // =====================================================
+
   Future<void> updateRequestStatus(
     String requestId,
     String status,
@@ -193,6 +226,7 @@ class ServiceRequestService {
           .update({
         'status': status,
       });
+
       print(
         'Request status updated to: $status',
       );
@@ -200,8 +234,8 @@ class ServiceRequestService {
       print(
         'Update Request Status Error: $e',
       );
+
       rethrow;
     }
   }
 }
-
