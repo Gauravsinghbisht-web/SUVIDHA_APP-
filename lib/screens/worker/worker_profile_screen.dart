@@ -4,8 +4,15 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class WorkerProfileScreen extends StatefulWidget {
+  // Worker UID whose profile we want to show.
+  //
+  // If null:
+  // The logged-in worker's own profile will be shown.
+  final String? workerId;
+
   const WorkerProfileScreen({
     super.key,
+    this.workerId,
   });
 
   @override
@@ -18,7 +25,6 @@ class _WorkerProfileScreenState
   // =====================================================
   // FIREBASE
   // =====================================================
-
   final FirebaseAuth _auth =
       FirebaseAuth.instance;
 
@@ -28,7 +34,6 @@ class _WorkerProfileScreenState
   // =====================================================
   // VARIABLES
   // =====================================================
-
   bool _isLoading = true;
   bool _isAvailable = true;
   bool _isUpdatingAvailability = false;
@@ -37,10 +42,24 @@ class _WorkerProfileScreenState
   String _email = '';
   String _phone = '';
 
+  String? _profileWorkerId;
+
+  // =====================================================
+  // CHECK WHETHER THIS IS MY PROFILE
+  // =====================================================
+  bool get _isMyProfile {
+    final currentUser = _auth.currentUser;
+
+    if (currentUser == null) {
+      return false;
+    }
+
+    return _profileWorkerId == currentUser.uid;
+  }
+
   // =====================================================
   // INIT
   // =====================================================
-
   @override
   void initState() {
     super.initState();
@@ -51,63 +70,73 @@ class _WorkerProfileScreenState
   // =====================================================
   // LOAD WORKER PROFILE
   // =====================================================
-
   Future<void> _loadWorkerProfile() async {
     try {
       final User? currentUser =
           _auth.currentUser;
 
-      if (currentUser == null) {
+      // -------------------------------------------------
+      // Decide which worker profile to load
+      // -------------------------------------------------
+      final String? workerId =
+          widget.workerId ?? currentUser?.uid;
+
+      if (workerId == null) {
         setState(() {
           _isLoading = false;
         });
-
         return;
       }
 
+      _profileWorkerId = workerId;
+
+      // -------------------------------------------------
+      // Get worker document
+      // -------------------------------------------------
       final DocumentSnapshot document =
           await _firestore
               .collection('users')
-              .doc(currentUser.uid)
+              .doc(workerId)
               .get();
 
-      if (document.exists) {
-        final Map<String, dynamic> data =
-            document.data()
-                as Map<String, dynamic>;
-
+      if (!document.exists) {
         setState(() {
-          _name = data['name'] ?? '';
-
-          _email =
-              data['email'] ??
-              currentUser.email ??
-              '';
-
-          _phone =
-              data['phone'] ?? '';
-
-          // If the field does not exist,
-          // worker will be available by default.
-          _isAvailable =
-              data['isAvailable'] ?? true;
-
           _isLoading = false;
         });
-      } else {
-        setState(() {
-          _email =
-              currentUser.email ?? '';
-
-          _isAvailable = true;
-
-          _isLoading = false;
-        });
+        return;
       }
+
+      final Map<String, dynamic> data =
+          document.data()
+              as Map<String, dynamic>;
+
+      // -------------------------------------------------
+      // Update UI
+      // -------------------------------------------------
+      if (!mounted) return;
+
+      setState(() {
+        _name = data['name'] ?? '';
+
+        _email =
+            data['email'] ??
+            '';
+
+        _phone =
+            data['phone'] ??
+            '';
+
+        _isAvailable =
+            data['isAvailable'] ?? true;
+
+        _isLoading = false;
+      });
     } catch (e) {
       debugPrint(
         'Load Worker Profile Error: $e',
       );
+
+      if (!mounted) return;
 
       setState(() {
         _isLoading = false;
@@ -118,7 +147,6 @@ class _WorkerProfileScreenState
   // =====================================================
   // UPDATE AVAILABILITY
   // =====================================================
-
   Future<void> _updateAvailability(
     bool value,
   ) async {
@@ -126,6 +154,12 @@ class _WorkerProfileScreenState
         _auth.currentUser;
 
     if (currentUser == null) {
+      return;
+    }
+
+    // Safety:
+    // Only the worker can change their own availability.
+    if (!_isMyProfile) {
       return;
     }
 
@@ -186,7 +220,6 @@ class _WorkerProfileScreenState
   // =====================================================
   // LOGOUT
   // =====================================================
-
   Future<void> _logout() async {
     try {
       await _auth.signOut();
@@ -207,13 +240,14 @@ class _WorkerProfileScreenState
   // =====================================================
   // BUILD
   // =====================================================
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Worker Profile',
+        title: Text(
+          _isMyProfile
+              ? 'My Profile'
+              : 'Worker Profile',
         ),
         centerTitle: true,
       ),
@@ -227,10 +261,10 @@ class _WorkerProfileScreenState
                   const EdgeInsets.all(20),
               child: Column(
                 children: [
+
                   // =====================================
                   // PROFILE IMAGE
                   // =====================================
-
                   const CircleAvatar(
                     radius: 55,
                     child: Icon(
@@ -244,7 +278,6 @@ class _WorkerProfileScreenState
                   // =====================================
                   // WORKER NAME
                   // =====================================
-
                   Text(
                     _name.isEmpty
                         ? 'Worker'
@@ -262,7 +295,6 @@ class _WorkerProfileScreenState
                   // =====================================
                   // AVAILABILITY
                   // =====================================
-
                   _availabilityCard(),
 
                   const SizedBox(height: 20),
@@ -270,7 +302,6 @@ class _WorkerProfileScreenState
                   // =====================================
                   // EMAIL
                   // =====================================
-
                   _profileItem(
                     icon:
                         Icons.email_outlined,
@@ -285,7 +316,6 @@ class _WorkerProfileScreenState
                   // =====================================
                   // PHONE
                   // =====================================
-
                   _profileItem(
                     icon:
                         Icons.phone_outlined,
@@ -295,64 +325,66 @@ class _WorkerProfileScreenState
                         : _phone,
                   ),
 
-                  const SizedBox(height: 30),
-
                   // =====================================
-                  // EDIT PROFILE
+                  // ONLY SHOW THESE BUTTONS
+                  // FOR THE WORKER'S OWN PROFILE
                   // =====================================
+                  if (_isMyProfile) ...[
+                    const SizedBox(height: 30),
 
-                  SizedBox(
-                    width:
-                        double.infinity,
-                    height: 52,
-                    child:
-                        ElevatedButton
-                            .icon(
-                      onPressed: () {
-                        // Edit Profile
-                        // will be added next.
-                      },
-                      icon: const Icon(
-                        Icons.edit,
-                      ),
-                      label:
-                          const Text(
-                        'Edit Profile',
-                        style:
-                            TextStyle(
-                          fontSize: 16,
+                    // ===================================
+                    // EDIT PROFILE
+                    // ===================================
+                    SizedBox(
+                      width:
+                          double.infinity,
+                      height: 52,
+                      child:
+                          ElevatedButton.icon(
+                        onPressed: () {
+                          // Edit Profile
+                          // will be added next.
+                        },
+                        icon: const Icon(
+                          Icons.edit,
+                        ),
+                        label:
+                            const Text(
+                          'Edit Profile',
+                          style:
+                              TextStyle(
+                            fontSize: 16,
+                          ),
                         ),
                       ),
                     ),
-                  ),
 
-                  const SizedBox(height: 15),
+                    const SizedBox(height: 15),
 
-                  // =====================================
-                  // LOGOUT
-                  // =====================================
-
-                  SizedBox(
-                    width:
-                        double.infinity,
-                    height: 52,
-                    child:
-                        OutlinedButton
-                            .icon(
-                      onPressed: _logout,
-                      icon: const Icon(
-                        Icons.logout,
-                      ),
-                      label:
-                          const Text(
-                        'Logout',
-                        style:
-                            TextStyle(
-                          fontSize: 16,
+                    // ===================================
+                    // LOGOUT
+                    // ===================================
+                    SizedBox(
+                      width:
+                          double.infinity,
+                      height: 52,
+                      child:
+                          OutlinedButton.icon(
+                        onPressed: _logout,
+                        icon: const Icon(
+                          Icons.logout,
+                        ),
+                        label:
+                            const Text(
+                          'Logout',
+                          style:
+                              TextStyle(
+                            fontSize: 16,
+                          ),
                         ),
                       ),
                     ),
-                  ),
+                  ],
                 ],
               ),
             ),
@@ -362,7 +394,6 @@ class _WorkerProfileScreenState
   // =====================================================
   // AVAILABILITY CARD
   // =====================================================
-
   Widget _availabilityCard() {
     return Card(
       elevation: 2,
@@ -431,24 +462,22 @@ class _WorkerProfileScreenState
               ),
             ),
 
-            // =========================================
-            // SWITCH
-            // =========================================
-
-            _isUpdatingAvailability
-                ? const SizedBox(
-                    width: 24,
-                    height: 24,
-                    child:
-                        CircularProgressIndicator(
-                      strokeWidth: 2,
+            // Only the worker can change availability.
+            if (_isMyProfile)
+              _isUpdatingAvailability
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child:
+                          CircularProgressIndicator(
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : Switch(
+                      value: _isAvailable,
+                      onChanged:
+                          _updateAvailability,
                     ),
-                  )
-                : Switch(
-                    value: _isAvailable,
-                    onChanged:
-                        _updateAvailability,
-                  ),
           ],
         ),
       ),
@@ -458,7 +487,6 @@ class _WorkerProfileScreenState
   // =====================================================
   // PROFILE ITEM
   // =====================================================
-
   Widget _profileItem({
     required IconData icon,
     required String title,

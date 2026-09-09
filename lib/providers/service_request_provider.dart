@@ -7,14 +7,12 @@ class ServiceRequestProvider extends ChangeNotifier {
   // =====================================================
   // SERVICE
   // =====================================================
-
   final ServiceRequestService _requestService =
       ServiceRequestService();
 
   // =====================================================
   // VARIABLES
   // =====================================================
-
   List<ServiceRequestModel> _requests = [];
   bool _isLoading = false;
   String? _errorMessage;
@@ -22,17 +20,13 @@ class ServiceRequestProvider extends ChangeNotifier {
   // =====================================================
   // GETTERS
   // =====================================================
-
   List<ServiceRequestModel> get requests => _requests;
-
   bool get isLoading => _isLoading;
-
   String? get errorMessage => _errorMessage;
 
   // =====================================================
   // CREATE SERVICE REQUEST
   // =====================================================
-
   Future<bool> createRequest({
     required String userId,
     required String workerId,
@@ -42,12 +36,10 @@ class ServiceRequestProvider extends ChangeNotifier {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
-
     try {
       // =================================================
       // CREATE REQUEST
       // =================================================
-
       final ServiceRequestModel request =
           ServiceRequestModel(
         id: '',
@@ -56,7 +48,6 @@ class ServiceRequestProvider extends ChangeNotifier {
         // IMPORTANT:
         // Request is now sent to the selected worker.
         workerId: workerId,
-
         serviceId: serviceId,
         serviceType: serviceType,
         status: 'pending',
@@ -66,28 +57,21 @@ class ServiceRequestProvider extends ChangeNotifier {
       // =================================================
       // SAVE TO FIRESTORE
       // =================================================
-
       await _requestService.createRequest(request);
-
       debugPrint(
         'Service request created successfully.',
       );
-
       _isLoading = false;
       notifyListeners();
-
       return true;
     } catch (e) {
       debugPrint(
         'Create Service Request Error: $e',
       );
-
       _errorMessage =
           'Unable to send service request.';
-
       _isLoading = false;
       notifyListeners();
-
       return false;
     }
   }
@@ -95,31 +79,25 @@ class ServiceRequestProvider extends ChangeNotifier {
   // =====================================================
   // GET PENDING REQUESTS
   // =====================================================
-
   Future<void> getPendingRequests() async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
-
     try {
       _requests =
           await _requestService.getPendingRequests();
-
       debugPrint(
         'Pending requests loaded: '
         '${_requests.length}',
       );
     } catch (e) {
       _requests = [];
-
       _errorMessage =
           'Unable to load available requests.';
-
       debugPrint(
         'Get Pending Requests Error: $e',
       );
     }
-
     _isLoading = false;
     notifyListeners();
   }
@@ -127,30 +105,25 @@ class ServiceRequestProvider extends ChangeNotifier {
   // =====================================================
   // GET REQUESTS FOR WORKER
   // =====================================================
-
   Future<void> getWorkerRequests(
     String workerId,
   ) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
-
     try {
       _requests =
           await _requestService.getWorkerRequests(
         workerId,
       );
-
       debugPrint(
         'Worker requests loaded: '
         '${_requests.length}',
       );
     } catch (e) {
       _requests = [];
-
       _errorMessage =
           'Unable to load worker requests.';
-
       debugPrint(
         'Get Worker Requests Error: $e',
       );
@@ -163,7 +136,6 @@ class ServiceRequestProvider extends ChangeNotifier {
   // =====================================================
   // GET REQUESTS FOR USER
   // =====================================================
-
   Future<void> getUserRequests(
     String userId,
   ) async {
@@ -199,7 +171,6 @@ class ServiceRequestProvider extends ChangeNotifier {
   // =====================================================
   // ACCEPT REQUEST
   // =====================================================
-
   Future<bool> acceptRequest({
     required String requestId,
     required String workerId,
@@ -245,7 +216,6 @@ class ServiceRequestProvider extends ChangeNotifier {
   // =====================================================
   // REJECT REQUEST
   // =====================================================
-
   Future<bool> rejectRequest(
     String requestId,
   ) async {

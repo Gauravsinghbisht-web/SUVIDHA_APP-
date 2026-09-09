@@ -5,6 +5,8 @@ import 'package:flutter_application_1/screens/user/user_chat_screen.dart';
 import 'package:flutter_application_1/screens/user/user_profile_screen.dart';
 import 'package:flutter_application_1/screens/user/user_requests_screen.dart';
 import 'package:flutter_application_1/views/search/service_search_bar.dart';
+import 'package:flutter_application_1/screens/map/google_map_screen.dart';
+import 'package:flutter_application_1/screens/map/google_map_screen.dart';
 
 class UserHomeScreen extends StatefulWidget {
   final String name;
@@ -25,7 +27,6 @@ class _UserHomeScreenState
   // =====================================================
   // VARIABLES
   // =====================================================
-
   int _currentIndex = 0;
 
   final TextEditingController searchController =
@@ -34,7 +35,6 @@ class _UserHomeScreenState
   // =====================================================
   // DISPOSE
   // =====================================================
-
   @override
   void dispose() {
     searchController.dispose();
@@ -44,7 +44,6 @@ class _UserHomeScreenState
   // =====================================================
   // SEARCH SERVICE
   // =====================================================
-
   void searchService(String value) {
     final String serviceType = value.trim();
 
@@ -74,21 +73,17 @@ class _UserHomeScreenState
   // =====================================================
   // HOME SCREEN
   // =====================================================
-
   Widget _homeScreen() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
-
       child: Column(
         crossAxisAlignment:
             CrossAxisAlignment.start,
-
         children: [
 
           // =============================================
           // WELCOME
           // =============================================
-
           Text(
             'Hello, ${widget.name} 👋',
             style: const TextStyle(
@@ -112,14 +107,11 @@ class _UserHomeScreenState
           // =============================================
           // SEARCH BAR
           // =============================================
-
           ServiceSearchBar(
             controller: searchController,
-
             onChanged: (value) {
               // Search text changes here.
             },
-
             onSubmitted: searchService,
           ),
 
@@ -128,7 +120,6 @@ class _UserHomeScreenState
           // =============================================
           // POPULAR SERVICES
           // =============================================
-
           const Text(
             'Popular Services',
             style: TextStyle(
@@ -142,21 +133,14 @@ class _UserHomeScreenState
           // =============================================
           // SERVICE GRID
           // =============================================
-
           GridView.count(
             crossAxisCount: 2,
-
             shrinkWrap: true,
-
             physics:
                 const NeverScrollableScrollPhysics(),
-
             crossAxisSpacing: 15,
-
             mainAxisSpacing: 15,
-
             childAspectRatio: 1.2,
-
             children: [
 
               // PLUMBER
@@ -185,7 +169,29 @@ class _UserHomeScreenState
             ],
           ),
 
-          const SizedBox(height: 30),
+          SizedBox(
+  width: double.infinity,
+  height: 55,
+  child: OutlinedButton.icon(
+    onPressed: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const GoogleMapScreen(),
+        ),
+      );
+    },
+    icon: const Icon(Icons.map),
+    label: const Text(
+      'Open Map',
+      style: TextStyle(
+        fontSize: 17,
+      ),
+    ),
+  ),
+),
+
+const SizedBox(height: 15),
 
           // =============================================
           // FIND WORKER BUTTON

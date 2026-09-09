@@ -7,28 +7,23 @@ class ServiceProvider extends ChangeNotifier {
   // =====================================================
   // SERVICE
   // =====================================================
-
   final ServiceService _serviceService =
       ServiceService();
 
   // =====================================================
   // VARIABLES
   // =====================================================
-
   List<ServiceModel> _services = [];
 
   // Worker profiles
   final Map<String, Map<String, dynamic>>
       _workerProfiles = {};
-
   bool _isLoading = false;
-
   String? _errorMessage;
 
   // =====================================================
   // GETTERS
   // =====================================================
-
   List<ServiceModel> get services =>
       _services;
 
@@ -47,7 +42,6 @@ class ServiceProvider extends ChangeNotifier {
   // =====================================================
   // GET ALL SERVICES
   // =====================================================
-
   Future<void> getAllServices() async {
     _isLoading = true;
     _errorMessage = null;
@@ -73,14 +67,12 @@ class ServiceProvider extends ChangeNotifier {
     }
 
     _isLoading = false;
-
     notifyListeners();
   }
 
   // =====================================================
   // SEARCH SERVICES
   // =====================================================
-
   Future<void> searchServices(
     String serviceType,
   ) async {
@@ -90,7 +82,6 @@ class ServiceProvider extends ChangeNotifier {
     // ---------------------------------------------------
     // Empty search
     // ---------------------------------------------------
-
     if (query.isEmpty) {
       _services = [];
       _workerProfiles.clear();
@@ -104,7 +95,6 @@ class ServiceProvider extends ChangeNotifier {
     // ---------------------------------------------------
     // Loading
     // ---------------------------------------------------
-
     _isLoading = true;
     _errorMessage = null;
 
@@ -114,7 +104,6 @@ class ServiceProvider extends ChangeNotifier {
       // -------------------------------------------------
       // Search services
       // -------------------------------------------------
-
       _services =
           await _serviceService
               .searchServices(query);
@@ -122,21 +111,17 @@ class ServiceProvider extends ChangeNotifier {
       // -------------------------------------------------
       // Clear old worker profiles
       // -------------------------------------------------
-
       _workerProfiles.clear();
 
       // -------------------------------------------------
       // Get worker profiles
       // -------------------------------------------------
-
       await _loadWorkerProfiles();
     } catch (e) {
       _services = [];
       _workerProfiles.clear();
-
       _errorMessage =
           'Unable to search services.';
-
       debugPrint(
         'Search Service Error: $e',
       );
@@ -145,21 +130,17 @@ class ServiceProvider extends ChangeNotifier {
     // ---------------------------------------------------
     // Stop loading
     // ---------------------------------------------------
-
     _isLoading = false;
-
     notifyListeners();
   }
 
   // =====================================================
   // LOAD WORKER PROFILES
   // =====================================================
-
   Future<void> _loadWorkerProfiles() async {
     for (final service in _services) {
       final String workerId =
           service.workerId;
-
       // Skip empty worker ID
       if (workerId.isEmpty) {
         continue;
@@ -193,7 +174,6 @@ class ServiceProvider extends ChangeNotifier {
   // =====================================================
   // GET WORKER SERVICES
   // =====================================================
-
   Future<List<ServiceModel>>
       getWorkerServices(
     String workerId,
@@ -207,7 +187,6 @@ class ServiceProvider extends ChangeNotifier {
       debugPrint(
         'Worker Services Error: $e',
       );
-
       return [];
     }
   }
@@ -215,14 +194,10 @@ class ServiceProvider extends ChangeNotifier {
   // =====================================================
   // CLEAR SEARCH RESULTS
   // =====================================================
-
   void clearServices() {
     _services = [];
-
     _workerProfiles.clear();
-
     _errorMessage = null;
-
     notifyListeners();
   }
 }

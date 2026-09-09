@@ -1,9 +1,12 @@
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_application_1/services/location_service.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final LocationService _locationService = LocationService(); //it is used to get the current location of the user during signup
 
   // =========================
   // SIGN UP
@@ -29,6 +32,8 @@ class AuthService {
         return null;
       }
 
+      final position = await _locationService.getCurrentLocation();
+
       // 2. Save additional user information in Firestore
       await _firestore.collection('users').doc(user.uid).set({
         'uid': user.uid,
@@ -36,6 +41,8 @@ class AuthService {
         'email': email.trim(),
         'phone': phone.trim(),
         'role': role,
+        'latitude' : position?.latitude,
+        'longitude' : position?.longitude,
         'createdAt': FieldValue.serverTimestamp(),
       });
 
