@@ -7,6 +7,8 @@ class RoleSelectionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -15,57 +17,67 @@ class RoleSelectionScreen extends StatelessWidget {
             children: [
               const SizedBox(height: 70),
 
-              const Text(
+              // =====================================================
+              // APP NAME
+              // =====================================================
+
+              Text(
                 'SUVIDHA',
-                style: TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 2,
-                ),
+                style: theme.textTheme.headlineLarge,
               ),
 
               const SizedBox(height: 12),
-              const Text(
+
+              // =====================================================
+              // SUBTITLE
+              // =====================================================
+
+              Text(
                 'How can we help you?',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: theme.textTheme.titleLarge,
               ),
 
               const SizedBox(height: 50),
+
+              // =====================================================
+              // USER ROLE
+              // =====================================================
+
               _RoleCard(
                 role: UserRole.user,
                 icon: Icons.person_outline,
                 title: "I'm a User",
                 subtitle: 'Find & book local service providers',
-                onTap: (role) {    // it is a client button
-                  print('Selected role: $role');
+                onTap: (role) {
                   Navigator.push(
                     context,
-                    
-                    //it is used for move to next screen and pass the role to login screen 
                     MaterialPageRoute(
-                      builder: (context) => LoginScreen(role: role),
+                      builder: (context) => LoginScreen(
+                        role: role,
+                      ),
                     ),
                   );
                 },
               ),
 
               const SizedBox(height: 20),
+
+              // =====================================================
+              // WORKER ROLE
+              // =====================================================
+
               _RoleCard(
                 role: UserRole.worker,
                 icon: Icons.handyman_outlined,
                 title: "I'm a Worker",
                 subtitle: 'Offer your services and get bookings',
-                onTap: (role) {    // it is a worker button 
-                  print('Selected role: $role');
+                onTap: (role) {
                   Navigator.push(
                     context,
-
-                    // it is used for move to next screen and pass the role to login screen.
                     MaterialPageRoute(
-                      builder: (context) => LoginScreen(role : role),
+                      builder: (context) => LoginScreen(
+                        role: role,
+                      ),
                     ),
                   );
                 },
@@ -77,6 +89,10 @@ class RoleSelectionScreen extends StatelessWidget {
     );
   }
 }
+
+// =====================================================
+// ROLE CARD
+// =====================================================
 
 class _RoleCard extends StatelessWidget {
   final UserRole role;
@@ -95,59 +111,65 @@ class _RoleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return InkWell(
       onTap: () {
         onTap(role);
       },
-      borderRadius: BorderRadius.circular(20),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: Colors.grey.shade300,
-          ),
-        ),
-        child: Row(
-          children: [
-            Icon(
-              icon,
-              size: 48,
-            ),
+      borderRadius: BorderRadius.circular(16),
+      child: Card(
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(24),
+          child: Row(
+            children: [
+              // =====================================================
+              // ROLE ICON
+              // =====================================================
 
-            const SizedBox(width: 20),
-
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 19,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-
-                  const SizedBox(height: 6),
-
-                  Text(
-                    subtitle,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
-                ],
+              Icon(
+                icon,
+                size: 48,
+                color: theme.colorScheme.primary,
               ),
-            ),
 
-            const Icon(
-              Icons.arrow_forward_ios,
-              size: 18,
-            ),
-          ],
+              const SizedBox(width: 20),
+
+              // =====================================================
+              // ROLE TEXT
+              // =====================================================
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: theme.textTheme.titleMedium,
+                    ),
+
+                    const SizedBox(height: 6),
+
+                    Text(
+                      subtitle,
+                      style: theme.textTheme.bodyMedium,
+                    ),
+                  ],
+                ),
+              ),
+
+              // =====================================================
+              // ARROW
+              // =====================================================
+
+              Icon(
+                Icons.arrow_forward_ios,
+                size: 18,
+                color: theme.colorScheme.primary,
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -1,4 +1,3 @@
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/service_model.dart';
 
@@ -38,6 +37,45 @@ class ServiceService {
   }
 
   // =====================================================
+  // REAL-TIME SEARCH SERVICES
+  // =====================================================
+
+  Stream<List<ServiceModel>> searchServicesStream(
+    String serviceType,
+  ) {
+    final String searchText =
+        serviceType.trim();
+
+    if (searchText.isEmpty) {
+      return Stream.value([]);
+    }
+
+    return _firestore
+        .collection('services')
+        .where(
+          'serviceType',
+          isEqualTo: searchText,
+        )
+        .snapshots()
+        .map((snapshot) {
+      print(
+        'Real-time services found: '
+        '${snapshot.docs.length}',
+      );
+
+      return snapshot.docs.map((doc) {
+        final data =
+            doc.data();
+
+        return ServiceModel.fromMap(
+          doc.id,
+          data,
+        );
+      }).toList();
+    });
+  }
+
+  // =====================================================
   // SEARCH SERVICES
   // =====================================================
 
@@ -55,10 +93,6 @@ class ServiceService {
       if (searchText.isEmpty) {
         return [];
       }
-
-      // ---------------------------------------------------
-      // Search using exact serviceType
-      // ---------------------------------------------------
 
       final QuerySnapshot snapshot =
           await _firestore
@@ -101,6 +135,25 @@ class ServiceService {
 
       rethrow;
     }
+  }
+
+  // =====================================================
+  // REAL-TIME WORKERS
+  // =====================================================
+
+  Stream<Set<String>> workerIdsStream() {
+    return _firestore
+        .collection('users')
+        .where(
+          'role',
+          isEqualTo: 'worker',
+        )
+        .snapshots()
+        .map((snapshot) {
+      return snapshot.docs
+          .map((doc) => doc.id)
+          .toSet();
+    });
   }
 
   // =====================================================
@@ -167,7 +220,8 @@ class ServiceService {
       }
 
       final data =
-          document.data() as Map<String, dynamic>;
+          document.data()
+              as Map<String, dynamic>;
 
       print(
         'Worker profile found: ${data['name']}',

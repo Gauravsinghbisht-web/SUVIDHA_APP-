@@ -1,6 +1,10 @@
+
 import 'package:flutter/material.dart';
-import '../../../models/user_role.dart';
-import '../../../services/auth_service.dart';
+import 'package:flutter_application_1/models/user_role.dart';
+import 'package:flutter_application_1/services/auth_service.dart';
+import 'package:provider/provider.dart';
+import 'package:flutter_application_1/models/user_role.dart';
+import 'package:flutter_application_1/services/auth_service.dart';
 
 class SignupScreen extends StatefulWidget {
   final UserRole role;
@@ -15,26 +19,79 @@ class SignupScreen extends StatefulWidget {
 }
 
 class _SignupScreenState extends State<SignupScreen> {
-  // =========================
-  // CONTROLLERS
-  // =========================
+  final _formKey = GlobalKey<FormState>();
 
-  final nameController = TextEditingController();
-  final emailController = TextEditingController();
-  final phoneController = TextEditingController();
-  final passwordController = TextEditingController();
+  final TextEditingController nameController =
+      TextEditingController();
 
-  // =========================
-  // AUTH SERVICE
-  // =========================
+  final TextEditingController emailController =
+      TextEditingController();
 
-  final AuthService authService = AuthService();
+  final TextEditingController phoneController =
+      TextEditingController();
+
+  final TextEditingController passwordController =
+      TextEditingController();
 
   bool isLoading = false;
+  bool obscurePassword = true;
 
-  // =========================
+  // =====================================================
+  // SIGN UP
+  // =====================================================
+
+  Future<void> _signup() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final authService = AuthService();
+
+      await authService.signUp(
+        name: nameController.text,
+        email: emailController.text,
+        phone: phoneController.text,
+        password: passwordController.text,
+        role: widget.role,
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Account created successfully'),
+        ),
+      );
+
+      // Go back to login screen
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            e.toString().replaceFirst('Exception: ', ''),
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
+  }
+
+  // =====================================================
   // DISPOSE
-  // =========================
+  // =====================================================
 
   @override
   void dispose() {
@@ -42,362 +99,195 @@ class _SignupScreenState extends State<SignupScreen> {
     emailController.dispose();
     phoneController.dispose();
     passwordController.dispose();
+
     super.dispose();
   }
 
-  // =========================
-  // SIGN UP
-  // =========================
-
-  Future<void> createAccount() async {
-    // Remove extra spaces
-    final name = nameController.text.trim();
-    final email = emailController.text.trim();
-    final phone = phoneController.text.trim();
-    final password = passwordController.text.trim();
-
-    // =========================
-    // VALIDATION
-    // =========================
-
-    if (name.isEmpty ||
-        email.isEmpty ||
-        phone.isEmpty ||
-        password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please fill all fields'),
-        ),
-      );
-
-      return;
-    }
-
-    if (password.length < 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Password must be at least 6 characters'),
-        ),
-      );
-
-      return;
-    }
-
-    // =========================
-    // START LOADING
-    // =========================
-
-    setState(() {
-      isLoading = true;
-    });
-
-    try {
-      // =========================
-      // CREATE FIREBASE ACCOUNT
-      // =========================
-
-      final user = await authService.signUp(
-        name: name,
-        email: email,
-        phone: phone,
-        password: password,
-        role: widget.role.name,
-      );
-
-      if (!mounted) return;
-
-      // =========================
-      // SUCCESS
-      // =========================
-
-      if (user != null) {
-        print('================================');
-        print('ACCOUNT CREATED SUCCESSFULLY');
-        print('Firebase UID: ${user.uid}');
-        print('Email: ${user.email}');
-        print('Role: ${widget.role.name}');
-        print('================================');
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Account created successfully!',
-            ),
-            backgroundColor: Colors.green,
-          ),
-        );
-
-        // Clear fields
-        nameController.clear();
-        emailController.clear();
-        phoneController.clear();
-        passwordController.clear();
-
-        // TODO:
-        // Later we will navigate to the Login screen
-        // or directly to the correct dashboard.
-      } else {
-        // =========================
-        // FAILED
-        // =========================
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Account creation failed. Please try again.',
-            ),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } catch (e) {
-      if (!mounted) return;
-
-      print('Create Account Error: $e');
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Something went wrong: $e',
-          ),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } finally {
-      if (!mounted) return;
-
-      setState(() {
-        isLoading = false;
-      });
-    }
-  }
-
-  // =========================
+  // =====================================================
   // UI
-  // =========================
+  // =====================================================
 
   @override
   Widget build(BuildContext context) {
-    final bool isUser = widget.role == UserRole.user;
+    final String roleName =
+        widget.role == UserRole.worker ? 'Worker' : 'User';
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          isUser ? 'User Sign Up' : 'Worker Sign Up',
-        ),
+        title: Text('$roleName Signup'),
       ),
 
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(20),
 
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 20),
+        child: Form(
+          key: _formKey,
 
-            // =========================
-            // TITLE
-            // =========================
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const SizedBox(height: 20),
 
-            Text(
-              isUser
-                  ? 'Create your User account'
-                  : 'Create your Worker account',
-
-              style: const TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
+              Text(
+                'Create your account',
+                style: Theme.of(context).textTheme.headlineSmall,
+                textAlign: TextAlign.center,
               ),
-            ),
 
-            const SizedBox(height: 10),
+              const SizedBox(height: 10),
 
-            // =========================
-            // SUBTITLE
-            // =========================
-
-            Text(
-              isUser
-                  ? 'Find trusted workers for your needs.'
-                  : 'Offer your services to customers.',
-
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey.shade600,
-              ),
-            ),
-
-            const SizedBox(height: 35),
-
-            // =========================
-            // FULL NAME
-            // =========================
-
-            const Text(
-              'Full Name',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            TextField(
-              controller: nameController,
-
-              textInputAction: TextInputAction.next,
-
-              decoration: InputDecoration(
-                hintText: 'Enter your name',
-
-                prefixIcon: const Icon(
-                  Icons.person_outline,
-                ),
-
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+              Text(
+                'Signup as $roleName',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.grey,
                 ),
               ),
-            ),
 
-            const SizedBox(height: 20),
+              const SizedBox(height: 30),
 
-            // =========================
-            // EMAIL
-            // =========================
-
-            const Text(
-              'Email',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            TextField(
-              controller: emailController,
-
-              keyboardType: TextInputType.emailAddress,
-
-              textInputAction: TextInputAction.next,
-
-              decoration: InputDecoration(
-                hintText: 'Enter your email',
-
-                prefixIcon: const Icon(
-                  Icons.email_outlined,
+              // NAME
+              TextFormField(
+                controller: nameController,
+                keyboardType: TextInputType.name,
+                decoration: const InputDecoration(
+                  labelText: 'Name',
+                  prefixIcon: Icon(Icons.person),
+                  border: OutlineInputBorder(),
                 ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter your name';
+                  }
 
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 16),
+
+              // EMAIL
+              TextFormField(
+                controller: emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
+                  labelText: 'Email',
+                  prefixIcon: Icon(Icons.email),
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter your email';
+                  }
+
+                  if (!value.contains('@')) {
+                    return 'Please enter a valid email';
+                  }
+
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 16),
+
+              // PHONE
+              TextFormField(
+                controller: phoneController,
+                keyboardType: TextInputType.phone,
+                decoration: const InputDecoration(
+                  labelText: 'Phone',
+                  prefixIcon: Icon(Icons.phone),
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Please enter your phone number';
+                  }
+
+                  if (value.trim().length < 10) {
+                    return 'Please enter a valid phone number';
+                  }
+
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 16),
+
+              // PASSWORD
+              TextFormField(
+                controller: passwordController,
+                obscureText: obscurePassword,
+                decoration: InputDecoration(
+                  labelText: 'Password',
+                  prefixIcon: const Icon(Icons.lock),
+                  border: const OutlineInputBorder(),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      obscurePassword
+                          ? Icons.visibility
+                          : Icons.visibility_off,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        obscurePassword = !obscurePassword;
+                      });
+                    },
+                  ),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter your password';
+                  }
+
+                  if (value.length < 6) {
+                    return 'Password must be at least 6 characters';
+                  }
+
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 30),
+
+              // SIGNUP BUTTON
+              SizedBox(
+                height: 52,
+
+                child: ElevatedButton(
+                  onPressed: isLoading ? null : _signup,
+
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          'Create Account',
+                          style: TextStyle(
+                            fontSize: 16,
+                          ),
+                        ),
                 ),
               ),
-            ),
 
-            const SizedBox(height: 20),
+              const SizedBox(height: 20),
 
-            // =========================
-            // PHONE
-            // =========================
-
-            const Text(
-              'Phone Number',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            TextField(
-              controller: phoneController,
-
-              keyboardType: TextInputType.phone,
-
-              textInputAction: TextInputAction.next,
-
-              decoration: InputDecoration(
-                hintText: 'Enter your phone number',
-
-                prefixIcon: const Icon(
-                  Icons.phone_outlined,
-                ),
-
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // =========================
-            // PASSWORD
-            // =========================
-
-            const Text(
-              'Password',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-
-            const SizedBox(height: 8),
-
-            TextField(
-              controller: passwordController,
-
-              obscureText: true,
-
-              textInputAction: TextInputAction.done,
-
-              decoration: InputDecoration(
-                hintText: 'Create a password',
-
-                prefixIcon: const Icon(
-                  Icons.lock_outline,
-                ),
-
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 30),
-
-            // =========================
-            // CREATE ACCOUNT BUTTON
-            // =========================
-
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-
-              child: ElevatedButton(
+              TextButton(
                 onPressed: isLoading
                     ? null
-                    : createAccount,
-
-                child: isLoading
-                    ? const SizedBox(
-                        height: 24,
-                        width: 24,
-
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                        ),
-                      )
-                    : const Text(
-                        'Create Account',
-                        style: TextStyle(
-                          fontSize: 17,
-                        ),
-                      ),
+                    : () {
+                        Navigator.pop(context);
+                      },
+                child: const Text(
+                  'Already have an account? Login',
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

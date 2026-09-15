@@ -1,3 +1,6 @@
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class ChatModel {
   final String id;
   final String userId;
@@ -13,14 +16,22 @@ class ChatModel {
     required this.createdAt,
   });
 
+  // =====================================================
+  // TO MAP
+  // =====================================================
+
   Map<String, dynamic> toMap() {
     return {
       'userId': userId,
       'workerId': workerId,
       'serviceRequestId': serviceRequestId,
-      'createdAt': createdAt,
+      'createdAt': Timestamp.fromDate(createdAt),
     };
   }
+
+  // =====================================================
+  // FROM MAP
+  // =====================================================
 
   factory ChatModel.fromMap(
     String id,
@@ -30,9 +41,10 @@ class ChatModel {
       id: id,
       userId: map['userId'] ?? '',
       workerId: map['workerId'] ?? '',
-      serviceRequestId: map['serviceRequestId'] ?? '',
-      createdAt: map['createdAt'] != null
-          ? map['createdAt'].toDate()
+      serviceRequestId:
+          map['serviceRequestId'] ?? '',
+      createdAt: map['createdAt'] is Timestamp
+          ? (map['createdAt'] as Timestamp).toDate()
           : DateTime.now(),
     );
   }

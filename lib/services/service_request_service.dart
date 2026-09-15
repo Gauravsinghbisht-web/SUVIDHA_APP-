@@ -6,14 +6,12 @@ class ServiceRequestService {
   // =====================================================
   // FIRESTORE
   // =====================================================
-
   final FirebaseFirestore _firestore =
       FirebaseFirestore.instance;
 
   // =====================================================
   // CREATE SERVICE REQUEST
-  // =====================================================
-
+  // ====================================================
   Future<void> createRequest(
     ServiceRequestModel request,
   ) async {
@@ -46,7 +44,6 @@ class ServiceRequestService {
   // worker selected by the user.
   //
   // =====================================================
-
   Future<List<ServiceRequestModel>>
       getPendingRequests() async {
     try {
@@ -82,7 +79,6 @@ class ServiceRequestService {
   // =====================================================
   // GET REQUESTS FOR WORKER
   // =====================================================
-
   Future<List<ServiceRequestModel>>
       getWorkerRequests(
     String workerId,
@@ -120,7 +116,6 @@ class ServiceRequestService {
   // =====================================================
   // GET REQUESTS FOR USER
   // =====================================================
-
   Future<List<ServiceRequestModel>>
       getUserRequests(
     String userId,
@@ -135,11 +130,7 @@ class ServiceRequestService {
               )
               .get();
 
-      print(
-        'User requests found: '
-        '${snapshot.docs.length}',
-      );
-
+      print('User requests found: ${snapshot.docs.length}');
       return snapshot.docs.map((doc) {
         return ServiceRequestModel.fromMap(
           doc.id,
@@ -158,7 +149,6 @@ class ServiceRequestService {
   // =====================================================
   // ACCEPT REQUEST
   // =====================================================
-
   Future<void> acceptRequest({
     required String requestId,
     required String workerId,
@@ -187,7 +177,6 @@ class ServiceRequestService {
   // =====================================================
   // REJECT REQUEST
   // =====================================================
-
   Future<void> rejectRequest(
     String requestId,
   ) async {
@@ -214,7 +203,6 @@ class ServiceRequestService {
   // =====================================================
   // UPDATE REQUEST STATUS
   // =====================================================
-
   Future<void> updateRequestStatus(
     String requestId,
     String status,

@@ -1,23 +1,34 @@
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-class EditWorkerProfileScreen extends StatefulWidget {
-  const EditWorkerProfileScreen({
+class EditProfileScreen extends StatefulWidget {
+  const EditProfileScreen({
     super.key,
   });
 
   @override
-  State<EditWorkerProfileScreen> createState() =>
-      _EditWorkerProfileScreenState();
+  State<EditProfileScreen> createState() =>
+      _EditProfileScreenState();
 }
 
-class _EditWorkerProfileScreenState
-    extends State<EditWorkerProfileScreen> {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+class _EditProfileScreenState
+    extends State<EditProfileScreen> {
+
+  // =====================================================
+  // FIREBASE
+  // =====================================================
+
+  final FirebaseAuth _auth =
+      FirebaseAuth.instance;
 
   final FirebaseFirestore _firestore =
       FirebaseFirestore.instance;
+
+  // =====================================================
+  // CONTROLLERS
+  // =====================================================
 
   final TextEditingController _nameController =
       TextEditingController();
@@ -28,22 +39,32 @@ class _EditWorkerProfileScreenState
   final TextEditingController _emailController =
       TextEditingController();
 
+  // =====================================================
+  // VARIABLES
+  // =====================================================
+
   bool _isLoading = true;
   bool _isSaving = false;
+
+  // =====================================================
+  // INIT
+  // =====================================================
 
   @override
   void initState() {
     super.initState();
-    _loadWorkerProfile();
+
+    _loadProfile();
   }
 
   // =====================================================
-  // LOAD WORKER PROFILE
+  // LOAD PROFILE
   // =====================================================
 
-  Future<void> _loadWorkerProfile() async {
+  Future<void> _loadProfile() async {
     try {
-      final User? currentUser = _auth.currentUser;
+      final User? currentUser =
+          _auth.currentUser;
 
       if (currentUser == null) {
         return;
@@ -57,11 +78,14 @@ class _EditWorkerProfileScreenState
 
       if (document.exists) {
         final Map<String, dynamic> data =
-            document.data() as Map<String, dynamic>;
+            document.data()
+                as Map<String, dynamic>;
 
-        _nameController.text = data['name'] ?? '';
+        _nameController.text =
+            data['name'] ?? '';
 
-        _phoneController.text = data['phone'] ?? '';
+        _phoneController.text =
+            data['phone'] ?? '';
 
         _emailController.text =
             data['email'] ??
@@ -72,17 +96,13 @@ class _EditWorkerProfileScreenState
             currentUser.email ?? '';
       }
 
-      if (!mounted) return;
-
       setState(() {
         _isLoading = false;
       });
     } catch (e) {
       debugPrint(
-        'Load Worker Profile Error: $e',
+        'Load Edit Profile Error: $e',
       );
-
-      if (!mounted) return;
 
       setState(() {
         _isLoading = false;
@@ -103,6 +123,7 @@ class _EditWorkerProfileScreenState
           ),
         ),
       );
+
       return;
     }
 
@@ -114,11 +135,13 @@ class _EditWorkerProfileScreenState
           ),
         ),
       );
+
       return;
     }
 
     try {
-      final User? currentUser = _auth.currentUser;
+      final User? currentUser =
+          _auth.currentUser;
 
       if (currentUser == null) {
         return;
@@ -128,7 +151,6 @@ class _EditWorkerProfileScreenState
         _isSaving = true;
       });
 
-      // Update Firestore
       await _firestore
           .collection('users')
           .doc(currentUser.uid)
@@ -150,7 +172,7 @@ class _EditWorkerProfileScreenState
       Navigator.pop(context);
     } catch (e) {
       debugPrint(
-        'Save Worker Profile Error: $e',
+        'Save Profile Error: $e',
       );
 
       if (!mounted) return;
@@ -170,6 +192,10 @@ class _EditWorkerProfileScreenState
       }
     }
   }
+
+  // =====================================================
+  // DISPOSE
+  // =====================================================
 
   @override
   void dispose() {
@@ -193,20 +219,23 @@ class _EditWorkerProfileScreenState
         ),
         centerTitle: true,
       ),
+
       body: _isLoading
           ? const Center(
               child: CircularProgressIndicator(),
             )
           : SingleChildScrollView(
               padding: const EdgeInsets.all(20),
+
               child: Column(
                 crossAxisAlignment:
                     CrossAxisAlignment.start,
+
                 children: [
 
-                  // ================================
+                  // =====================================
                   // NAME
-                  // ================================
+                  // =====================================
 
                   const Text(
                     'Name',
@@ -232,12 +261,12 @@ class _EditWorkerProfileScreenState
 
                   const SizedBox(height: 20),
 
-                  // ================================
+                  // =====================================
                   // PHONE
-                  // ================================
+                  // =====================================
 
                   const Text(
-                    'Mobile Number',
+                    'Phone Number',
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
@@ -254,7 +283,7 @@ class _EditWorkerProfileScreenState
                         TextInputAction.next,
                     decoration: const InputDecoration(
                       hintText:
-                          'Enter your mobile number',
+                          'Enter your phone number',
                       prefixIcon: Icon(
                         Icons.phone_outlined,
                       ),
@@ -263,9 +292,9 @@ class _EditWorkerProfileScreenState
 
                   const SizedBox(height: 20),
 
-                  // ================================
+                  // =====================================
                   // EMAIL
-                  // ================================
+                  // =====================================
 
                   const Text(
                     'Email',
@@ -289,18 +318,20 @@ class _EditWorkerProfileScreenState
 
                   const SizedBox(height: 35),
 
-                  // ================================
+                  // =====================================
                   // SAVE BUTTON
-                  // ================================
+                  // =====================================
 
                   SizedBox(
                     width: double.infinity,
                     height: 52,
+
                     child: ElevatedButton(
                       onPressed:
                           _isSaving
                               ? null
                               : _saveProfile,
+
                       child: _isSaving
                           ? const SizedBox(
                               height: 22,

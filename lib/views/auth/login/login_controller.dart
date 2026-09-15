@@ -1,7 +1,6 @@
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
 import '../../../models/user_role.dart';
 import '../../../services/auth_service.dart';
 
@@ -60,7 +59,10 @@ class LoginController {
           userData['name']?.toString() ?? '';
 
       final String role =
-          userData['role']?.toString().toLowerCase() ?? '';
+          userData['role']
+                  ?.toString()
+                  .toLowerCase() ??
+              '';
 
       print('Firestore role: $role');
       print('Firestore name: $name');
@@ -72,7 +74,9 @@ class LoginController {
       final String selectedRoleName =
           selectedRole.name;
 
-      print('Selected role: $selectedRoleName');
+      print(
+        'Selected role: $selectedRoleName',
+      );
 
       if (role != selectedRoleName) {
         return LoginResult.failure(
@@ -98,50 +102,65 @@ class LoginController {
     // =====================================================
 
     on FirebaseAuthException catch (e) {
-      print('Firebase Login Error: ${e.code}');
-      print('Message: ${e.message}');
+      print(
+        'Firebase Login Error: ${e.code}',
+      );
+      print(
+        'Message: ${e.message}',
+      );
 
       String message;
 
       switch (e.code) {
         case 'user-not-found':
-          message = 'No account found with this email.';
+          message =
+              'No account found with this email.';
           break;
 
         case 'wrong-password':
         case 'invalid-credential':
-          message = 'Incorrect email or password.';
+          message =
+              'Incorrect email or password.';
           break;
 
         case 'invalid-email':
-          message = 'Please enter a valid email.';
+          message =
+              'Please enter a valid email.';
           break;
 
         case 'user-disabled':
-          message = 'This account has been disabled.';
+          message =
+              'This account has been disabled.';
           break;
 
         case 'too-many-requests':
-          message = 'Too many attempts. Try again later.';
+          message =
+              'Too many attempts. Try again later.';
           break;
 
         default:
-          message = e.message ?? 'Login failed.';
+          message =
+              e.message ?? 'Login failed.';
       }
 
       return LoginResult.failure(message);
     }
 
     // =====================================================
-    // FIRESTORE ERROR
+    // FIRESTORE / FIREBASE ERROR
     // =====================================================
 
     on FirebaseException catch (e) {
-      print('Firestore Error: ${e.code}');
-      print('Message: ${e.message}');
+      print(
+        'Firebase Error: ${e.code}',
+      );
+      print(
+        'Message: ${e.message}',
+      );
 
       return LoginResult.failure(
-        'Database error: ${e.message ?? e.code}',
+        'Database error: '
+        '${e.message ?? e.code}',
       );
     }
 
@@ -150,7 +169,9 @@ class LoginController {
     // =====================================================
 
     catch (e) {
-      print('Login Error: $e');
+      print(
+        'Login Error: $e',
+      );
 
       return LoginResult.failure(
         'Something went wrong: $e',
@@ -166,25 +187,39 @@ class LoginController {
     String email,
   ) async {
     try {
+      // Check empty email
+      if (email.trim().isEmpty) {
+        return LoginResult.failure(
+          'Please enter your email address.',
+        );
+      }
+
+      // Call AuthService
       final bool success =
           await authService.resetPassword(
         email.trim(),
       );
 
+      // Email successfully sent
       if (success) {
         return LoginResult.successMessage(
-          'Password reset email sent. Check your inbox.',
+          'Password reset email sent. '
+          'Check your inbox.',
         );
       }
 
+      // Failed
       return LoginResult.failure(
         'Unable to send password reset email.',
       );
     } catch (e) {
-      print('Password Reset Error: $e');
+      print(
+        'Password Reset Error: $e',
+      );
 
       return LoginResult.failure(
-        'Error: $e',
+        'Something went wrong while '
+        'resetting your password.',
       );
     }
   }
@@ -223,7 +258,10 @@ class LoginResult {
     this.role,
   });
 
-  // Successful login
+  // =====================================================
+  // SUCCESSFUL LOGIN
+  // =====================================================
+
   factory LoginResult.success({
     required User user,
     required String name,
@@ -238,7 +276,10 @@ class LoginResult {
     );
   }
 
-  // Successful operation with message
+  // =====================================================
+  // SUCCESSFUL OPERATION WITH MESSAGE
+  // =====================================================
+
   factory LoginResult.successMessage(
     String message,
   ) {
@@ -248,7 +289,10 @@ class LoginResult {
     );
   }
 
-  // Failed operation
+  // =====================================================
+  // FAILED OPERATION
+  // =====================================================
+
   factory LoginResult.failure(
     String message,
   ) {
@@ -258,4 +302,3 @@ class LoginResult {
     );
   }
 }
-

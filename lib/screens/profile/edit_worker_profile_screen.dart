@@ -1,3 +1,4 @@
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -14,10 +15,20 @@ class EditWorkerProfileScreen extends StatefulWidget {
 
 class _EditWorkerProfileScreenState
     extends State<EditWorkerProfileScreen> {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  // =====================================================
+  // FIREBASE
+  // =====================================================
+
+  final FirebaseAuth _auth =
+      FirebaseAuth.instance;
 
   final FirebaseFirestore _firestore =
       FirebaseFirestore.instance;
+
+  // =====================================================
+  // CONTROLLERS
+  // =====================================================
 
   final TextEditingController _nameController =
       TextEditingController();
@@ -28,12 +39,21 @@ class _EditWorkerProfileScreenState
   final TextEditingController _emailController =
       TextEditingController();
 
+  // =====================================================
+  // VARIABLES
+  // =====================================================
+
   bool _isLoading = true;
   bool _isSaving = false;
+
+  // =====================================================
+  // INIT
+  // =====================================================
 
   @override
   void initState() {
     super.initState();
+
     _loadWorkerProfile();
   }
 
@@ -43,7 +63,8 @@ class _EditWorkerProfileScreenState
 
   Future<void> _loadWorkerProfile() async {
     try {
-      final User? currentUser = _auth.currentUser;
+      final User? currentUser =
+          _auth.currentUser;
 
       if (currentUser == null) {
         return;
@@ -57,11 +78,14 @@ class _EditWorkerProfileScreenState
 
       if (document.exists) {
         final Map<String, dynamic> data =
-            document.data() as Map<String, dynamic>;
+            document.data()
+                as Map<String, dynamic>;
 
-        _nameController.text = data['name'] ?? '';
+        _nameController.text =
+            data['name'] ?? '';
 
-        _phoneController.text = data['phone'] ?? '';
+        _phoneController.text =
+            data['phone'] ?? '';
 
         _emailController.text =
             data['email'] ??
@@ -77,7 +101,9 @@ class _EditWorkerProfileScreenState
       setState(() {
         _isLoading = false;
       });
+
     } catch (e) {
+
       debugPrint(
         'Load Worker Profile Error: $e',
       );
@@ -95,30 +121,64 @@ class _EditWorkerProfileScreenState
   // =====================================================
 
   Future<void> _saveProfile() async {
-    if (_nameController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
+
+    final String name =
+        _nameController.text.trim();
+
+    final String phone =
+        _phoneController.text.trim();
+
+    final String email =
+        _emailController.text.trim();
+
+    // ---------------------------------------------------
+    // VALIDATION
+    // ---------------------------------------------------
+
+    if (name.isEmpty) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
         const SnackBar(
-          content: Text(
-            'Please enter your name',
-          ),
+          content:
+              Text('Please enter your name.'),
         ),
       );
+
       return;
     }
 
-    if (_phoneController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
+    if (phone.isEmpty) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
         const SnackBar(
-          content: Text(
-            'Please enter your phone number',
+          content:
+              Text(
+            'Please enter your phone number.',
           ),
         ),
       );
+
+      return;
+    }
+
+    if (email.isEmpty) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+        const SnackBar(
+          content:
+              Text(
+            'Please enter your email.',
+          ),
+        ),
+      );
+
       return;
     }
 
     try {
-      final User? currentUser = _auth.currentUser;
+
+      final User? currentUser =
+          _auth.currentUser;
 
       if (currentUser == null) {
         return;
@@ -128,41 +188,62 @@ class _EditWorkerProfileScreenState
         _isSaving = true;
       });
 
-      // Update Firestore
+      // -------------------------------------------------
+      // UPDATE FIREBASE AUTH EMAIL
+      // -------------------------------------------------
+
+      if (email != currentUser.email) {
+
+        await currentUser
+            .verifyBeforeUpdateEmail(email);
+      }
+
+      // -------------------------------------------------
+      // UPDATE FIRESTORE
+      // -------------------------------------------------
+
       await _firestore
           .collection('users')
           .doc(currentUser.uid)
           .update({
-        'name': _nameController.text.trim(),
-        'phone': _phoneController.text.trim(),
+        'name': name,
+        'phone': phone,
+        'email': email,
       });
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
         const SnackBar(
           content: Text(
-            'Profile updated successfully',
+            'Profile updated successfully.',
           ),
         ),
       );
 
+      // Go back to Worker Profile
       Navigator.pop(context);
+
     } catch (e) {
+
       debugPrint(
         'Save Worker Profile Error: $e',
       );
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+        SnackBar(
           content: Text(
-            'Failed to update profile',
+            'Failed to update profile: $e',
           ),
         ),
       );
+
     } finally {
+
       if (mounted) {
         setState(() {
           _isSaving = false;
@@ -171,8 +252,13 @@ class _EditWorkerProfileScreenState
     }
   }
 
+  // =====================================================
+  // DISPOSE
+  // =====================================================
+
   @override
   void dispose() {
+
     _nameController.dispose();
     _phoneController.dispose();
     _emailController.dispose();
@@ -186,45 +272,64 @@ class _EditWorkerProfileScreenState
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
+
       appBar: AppBar(
         title: const Text(
           'Edit Profile',
         ),
         centerTitle: true,
       ),
+
       body: _isLoading
+
           ? const Center(
-              child: CircularProgressIndicator(),
+              child:
+                  CircularProgressIndicator(),
             )
+
           : SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
+
+              padding:
+                  const EdgeInsets.all(20),
+
               child: Column(
+
                 crossAxisAlignment:
                     CrossAxisAlignment.start,
+
                 children: [
 
-                  // ================================
+                  // =====================================
                   // NAME
-                  // ================================
+                  // =====================================
 
                   const Text(
                     'Name',
                     style: TextStyle(
                       fontSize: 15,
-                      fontWeight: FontWeight.w600,
+                      fontWeight:
+                          FontWeight.w600,
                     ),
                   ),
 
                   const SizedBox(height: 8),
 
                   TextFormField(
-                    controller: _nameController,
+                    controller:
+                        _nameController,
+
                     textInputAction:
                         TextInputAction.next,
-                    decoration: const InputDecoration(
-                      hintText: 'Enter your name',
-                      prefixIcon: Icon(
+
+                    decoration:
+                        const InputDecoration(
+                      hintText:
+                          'Enter your name',
+
+                      prefixIcon:
+                          Icon(
                         Icons.person_outline,
                       ),
                     ),
@@ -232,30 +337,38 @@ class _EditWorkerProfileScreenState
 
                   const SizedBox(height: 20),
 
-                  // ================================
+                  // =====================================
                   // PHONE
-                  // ================================
+                  // =====================================
 
                   const Text(
-                    'Mobile Number',
+                    'Phone Number',
                     style: TextStyle(
                       fontSize: 15,
-                      fontWeight: FontWeight.w600,
+                      fontWeight:
+                          FontWeight.w600,
                     ),
                   ),
 
                   const SizedBox(height: 8),
 
                   TextFormField(
-                    controller: _phoneController,
+                    controller:
+                        _phoneController,
+
                     keyboardType:
                         TextInputType.phone,
+
                     textInputAction:
                         TextInputAction.next,
-                    decoration: const InputDecoration(
+
+                    decoration:
+                        const InputDecoration(
                       hintText:
-                          'Enter your mobile number',
-                      prefixIcon: Icon(
+                          'Enter your phone number',
+
+                      prefixIcon:
+                          Icon(
                         Icons.phone_outlined,
                       ),
                     ),
@@ -263,25 +376,35 @@ class _EditWorkerProfileScreenState
 
                   const SizedBox(height: 20),
 
-                  // ================================
+                  // =====================================
                   // EMAIL
-                  // ================================
+                  // =====================================
 
                   const Text(
                     'Email',
                     style: TextStyle(
                       fontSize: 15,
-                      fontWeight: FontWeight.w600,
+                      fontWeight:
+                          FontWeight.w600,
                     ),
                   ),
 
                   const SizedBox(height: 8),
 
                   TextFormField(
-                    controller: _emailController,
-                    readOnly: true,
-                    decoration: const InputDecoration(
-                      prefixIcon: Icon(
+                    controller:
+                        _emailController,
+
+                    keyboardType:
+                        TextInputType.emailAddress,
+
+                    decoration:
+                        const InputDecoration(
+                      hintText:
+                          'Enter your email',
+
+                      prefixIcon:
+                          Icon(
                         Icons.email_outlined,
                       ),
                     ),
@@ -289,30 +412,39 @@ class _EditWorkerProfileScreenState
 
                   const SizedBox(height: 35),
 
-                  // ================================
+                  // =====================================
                   // SAVE BUTTON
-                  // ================================
+                  // =====================================
 
                   SizedBox(
-                    width: double.infinity,
+                    width:
+                        double.infinity,
+
                     height: 52,
-                    child: ElevatedButton(
+
+                    child:
+                        ElevatedButton(
                       onPressed:
                           _isSaving
                               ? null
                               : _saveProfile,
+
                       child: _isSaving
+
                           ? const SizedBox(
                               height: 22,
                               width: 22,
+
                               child:
                                   CircularProgressIndicator(
                                 strokeWidth: 2,
                               ),
                             )
+
                           : const Text(
                               'Save Changes',
-                              style: TextStyle(
+                              style:
+                                  TextStyle(
                                 fontSize: 16,
                               ),
                             ),

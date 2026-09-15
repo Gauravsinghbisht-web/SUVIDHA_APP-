@@ -9,6 +9,12 @@ class ServiceRequestModel {
   final String serviceType;
   final String status;
   final DateTime createdAt;
+  
+  // it is for bookings
+  final DateTime? bookingDate;
+  final String? bookingTime;
+  final String? address;
+  final String? problemDescription;
 
   ServiceRequestModel({
     required this.id,
@@ -18,6 +24,13 @@ class ServiceRequestModel {
     required this.serviceType,
     required this.status,
     required this.createdAt,
+
+    //it is for bookings
+    this.bookingDate,
+    this.bookingTime,
+    this.address,
+    this.problemDescription,
+    
   });
 
   // =====================================================
@@ -36,6 +49,10 @@ class ServiceRequestModel {
       status: map['status'] ?? 'pending',
       createdAt: (map['createdAt'] as Timestamp?)?.toDate() ??
           DateTime.now(),
+      bookingDate: (map['bookingDate'] as Timestamp?)?.toDate(),
+      bookingTime: map['bookingTime'] ?? null,
+      address: map['address'] ?? null,
+      problemDescription: map['problemDescription'] ?? null,
     );
   }
 
@@ -50,6 +67,11 @@ class ServiceRequestModel {
       'serviceType': serviceType,
       'status': status,
       'createdAt': Timestamp.fromDate(createdAt),
+      'bookingDate':bookingDate != null? Timestamp.fromDate(bookingDate!) : null,
+      'bookingTime' : bookingTime,
+      'address' : address,
+      'problemDescription' : problemDescription,
+
     };
   }
 
@@ -64,6 +86,10 @@ class ServiceRequestModel {
     String? serviceType,
     String? status,
     DateTime? createdAt,
+    DateTime? bookingDate,
+    String? bookingTime,
+    String? address,
+    String? problemDescription,
   }) {
     return ServiceRequestModel(
       id: id ?? this.id,
@@ -73,6 +99,11 @@ class ServiceRequestModel {
       serviceType: serviceType ?? this.serviceType,
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
+      bookingDate : bookingDate ?? this.bookingDate,
+      bookingTime : bookingTime ?? this.bookingTime,
+      address : address ?? this.address,
+      problemDescription : problemDescription ?? this.problemDescription,
+
     );
   }
 }

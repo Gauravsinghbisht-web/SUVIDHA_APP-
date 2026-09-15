@@ -2,6 +2,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/screens/profile/edit_user_profile_screen.dart';
 
 class UserProfileScreen extends StatefulWidget {
   const UserProfileScreen({
@@ -222,7 +223,12 @@ class _UserProfileScreenState
                     child: ElevatedButton.icon(
                       onPressed: () {
                         // Edit Profile
-                        // will be added next.
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => EditProfileScreen(),
+                          ),
+                        );
                       },
 
                       icon: const Icon(

@@ -1,5 +1,7 @@
+import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+
 import '../models/service_model.dart';
 import '../services/service_service.dart';
 
@@ -7,19 +9,31 @@ class ServiceProvider extends ChangeNotifier {
   // =====================================================
   // SERVICE
   // =====================================================
+
   final ServiceService _serviceService =
       ServiceService();
 
   // =====================================================
   // VARIABLES
   // =====================================================
+
   List<ServiceModel> _services = [];
 
-  // Worker profiles
   final Map<String, Map<String, dynamic>>
       _workerProfiles = {};
+
   bool _isLoading = false;
+
   String? _errorMessage;
+
+  StreamSubscription<List<ServiceModel>>?
+      _servicesSubscription;
+
+  StreamSubscription<Set<String>>?
+      _workersSubscription;
+
+  Set<String> _activeWorkerIds = {};
+
 
   // =====================================================
   // GETTERS
@@ -42,6 +56,7 @@ class ServiceProvider extends ChangeNotifier {
   // =====================================================
   // GET ALL SERVICES
   // =====================================================
+
   Future<void> getAllServices() async {
     _isLoading = true;
     _errorMessage = null;
@@ -53,8 +68,11 @@ class ServiceProvider extends ChangeNotifier {
           await _serviceService
               .getAllServices();
 
-      // Get worker profiles
       await _loadWorkerProfiles();
+
+      // Remove services whose workers
+      // no longer exist.
+      _filterDeletedWorkers();
     } catch (e) {
       _services = [];
 
@@ -67,12 +85,14 @@ class ServiceProvider extends ChangeNotifier {
     }
 
     _isLoading = false;
+
     notifyListeners();
   }
 
   // =====================================================
-  // SEARCH SERVICES
+  // SEARCH SERVICES - REAL TIME
   // =====================================================
+
   Future<void> searchServices(
     String serviceType,
   ) async {
@@ -82,9 +102,14 @@ class ServiceProvider extends ChangeNotifier {
     // ---------------------------------------------------
     // Empty search
     // ---------------------------------------------------
+
     if (query.isEmpty) {
+      _stopRealtimeListeners();
+
       _services = [];
+
       _workerProfiles.clear();
+
       _errorMessage = null;
 
       notifyListeners();
@@ -95,58 +120,134 @@ class ServiceProvider extends ChangeNotifier {
     // ---------------------------------------------------
     // Loading
     // ---------------------------------------------------
+
     _isLoading = true;
+
     _errorMessage = null;
 
+
     notifyListeners();
 
-    try {
-      // -------------------------------------------------
-      // Search services
-      // -------------------------------------------------
-      _services =
-          await _serviceService
-              .searchServices(query);
+    // ---------------------------------------------------
+    // Stop old listeners
+    // ---------------------------------------------------
 
-      // -------------------------------------------------
-      // Clear old worker profiles
-      // -------------------------------------------------
-      _workerProfiles.clear();
+    await _stopRealtimeListeners();
 
-      // -------------------------------------------------
-      // Get worker profiles
-      // -------------------------------------------------
-      await _loadWorkerProfiles();
-    } catch (e) {
+    _services = [];
+
+    _workerProfiles.clear();
+
+    // ---------------------------------------------------
+    // Listen to SERVICES
+    // ---------------------------------------------------
+
+    _servicesSubscription =
+        _serviceService
+            .searchServicesStream(query)
+            .listen(
+      (services) async {
+        _services = services;
+
+        await _loadWorkerProfiles();
+
+        _filterDeletedWorkers();
+
+        _isLoading = false;
+
+        notifyListeners();
+      },
+      onError: (error) {
+        _services = [];
+
+        _workerProfiles.clear();
+
+        _isLoading = false;
+
+        _errorMessage =
+            'Unable to search services.';
+
+        debugPrint(
+          'Search Service Stream Error: $error',
+        );
+
+        notifyListeners();
+      },
+    );
+
+    // ---------------------------------------------------
+    // Listen to WORKERS
+    // ---------------------------------------------------
+
+    _workersSubscription =
+        _serviceService
+            .workerIdsStream()
+            .listen(
+      (workerIds) async {
+        _activeWorkerIds = workerIds;
+
+        // Worker was deleted from Firestore.
+        _filterDeletedWorkers();
+
+        // Reload worker profiles.
+        await _loadWorkerProfiles();
+
+        notifyListeners();
+      },
+      onError: (error) {
+        debugPrint(
+          'Worker Stream Error: $error',
+        );
+      },
+    );
+  }
+
+  // =====================================================
+  // REMOVE DELETED WORKERS
+  // =====================================================
+
+  void _filterDeletedWorkers() {
+    if (_activeWorkerIds.isEmpty) {
       _services = [];
       _workerProfiles.clear();
-      _errorMessage =
-          'Unable to search services.';
-      debugPrint(
-        'Search Service Error: $e',
-      );
+
+      return;
     }
 
-    // ---------------------------------------------------
-    // Stop loading
-    // ---------------------------------------------------
-    _isLoading = false;
-    notifyListeners();
+    _services = _services.where((service) {
+      return _activeWorkerIds
+          .contains(service.workerId);
+    }).toList();
+
+    _workerProfiles.removeWhere(
+      (workerId, profile) {
+        return !_activeWorkerIds
+            .contains(workerId);
+      },
+    );
   }
 
   // =====================================================
   // LOAD WORKER PROFILES
   // =====================================================
+
   Future<void> _loadWorkerProfiles() async {
     for (final service in _services) {
       final String workerId =
           service.workerId;
+
       // Skip empty worker ID
       if (workerId.isEmpty) {
         continue;
       }
 
-      // Don't load the same worker twice
+      // Skip if worker does not exist
+      if (!_activeWorkerIds
+          .contains(workerId)) {
+        continue;
+      }
+
+      // Don't load same worker twice
       if (_workerProfiles
           .containsKey(workerId)) {
         continue;
@@ -174,6 +275,7 @@ class ServiceProvider extends ChangeNotifier {
   // =====================================================
   // GET WORKER SERVICES
   // =====================================================
+
   Future<List<ServiceModel>>
       getWorkerServices(
     String workerId,
@@ -187,6 +289,7 @@ class ServiceProvider extends ChangeNotifier {
       debugPrint(
         'Worker Services Error: $e',
       );
+
       return [];
     }
   }
@@ -194,10 +297,46 @@ class ServiceProvider extends ChangeNotifier {
   // =====================================================
   // CLEAR SEARCH RESULTS
   // =====================================================
+
   void clearServices() {
+    _stopRealtimeListeners();
+
     _services = [];
+
     _workerProfiles.clear();
+
     _errorMessage = null;
+
+    _activeWorkerIds = {};
+
+
     notifyListeners();
+  }
+
+  // =====================================================
+  // STOP REAL-TIME LISTENERS
+  // =====================================================
+
+  Future<void> _stopRealtimeListeners() async {
+    await _servicesSubscription?.cancel();
+
+    await _workersSubscription?.cancel();
+
+    _servicesSubscription = null;
+
+    _workersSubscription = null;
+  }
+
+  // =====================================================
+  // DISPOSE
+  // =====================================================
+
+  @override
+  void dispose() {
+    _servicesSubscription?.cancel();
+
+    _workersSubscription?.cancel();
+
+    super.dispose();
   }
 }

@@ -4,6 +4,7 @@ import '../models/service_request_model.dart';
 import '../services/service_request_service.dart';
 
 class ServiceRequestProvider extends ChangeNotifier {
+
   // =====================================================
   // SERVICE
   // =====================================================
@@ -32,11 +33,19 @@ class ServiceRequestProvider extends ChangeNotifier {
     required String workerId,
     required String serviceId,
     required String serviceType,
+
+    //NEW BOOKING PARAMETERS
+    required DateTime bookingDate,
+    required String bookingTime,
+    required String address,
+    required String problemDescription,
+
   }) async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
     try {
+
       // =================================================
       // CREATE REQUEST
       // =================================================
@@ -52,6 +61,13 @@ class ServiceRequestProvider extends ChangeNotifier {
         serviceType: serviceType,
         status: 'pending',
         createdAt: DateTime.now(),
+
+        //booking information
+        bookingDate : bookingDate,
+        bookingTime : bookingTime,
+        address : address,
+        problemDescription : problemDescription,
+        
       );
 
       // =================================================

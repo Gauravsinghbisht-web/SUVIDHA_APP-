@@ -1,11 +1,11 @@
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:flutter_application_1/screens/worker/worker_home_screen.dart';
 import '../../../models/user_role.dart';
 import '../../../screens/user/user_home_screen.dart';
+import '../../../viewmodels/auth_viewmodel.dart';
 import '../signup/signup_screen.dart';
-
-import 'login_controller.dart';
 import 'login_form.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -34,17 +34,8 @@ class _LoginScreenState extends State<LoginScreen> {
       TextEditingController();
 
   // =====================================================
-  // LOGIN CONTROLLER
-  // =====================================================
-
-  final LoginController loginController =
-      LoginController();
-
-  // =====================================================
   // SCREEN VARIABLES
   // =====================================================
-
-  bool isLoading = false;
 
   bool obscurePassword = true;
 
@@ -77,7 +68,6 @@ class _LoginScreenState extends State<LoginScreen> {
     // ---------------------------------------------------
 
     if (email.isEmpty || password.isEmpty) {
-
       showMessage(
         'Please enter email and password',
         Colors.red,
@@ -87,19 +77,18 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     // ---------------------------------------------------
-    // START LOADING
+    // GET AUTH VIEWMODEL
     // ---------------------------------------------------
 
-    setState(() {
-      isLoading = true;
-    });
+    final AuthViewModel authViewModel =
+        context.read<AuthViewModel>();
 
     // ---------------------------------------------------
-    // LOGIN THROUGH CONTROLLER
+    // LOGIN
     // ---------------------------------------------------
 
-    final LoginResult result =
-        await loginController.login(
+    final bool success =
+        await authViewModel.login(
       email: email,
       password: password,
       selectedRole: widget.role,
@@ -108,21 +97,13 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
 
     // ---------------------------------------------------
-    // STOP LOADING
-    // ---------------------------------------------------
-
-    setState(() {
-      isLoading = false;
-    });
-
-    // ---------------------------------------------------
     // LOGIN FAILED
     // ---------------------------------------------------
 
-    if (!result.isSuccess) {
-
+    if (!success) {
       showMessage(
-        result.message,
+        authViewModel.errorMessage ??
+            'Login failed.',
         Colors.red,
       );
 
@@ -130,14 +111,14 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     // ---------------------------------------------------
-    // LOGIN SUCCESSFUL
+    // GET USER INFORMATION
     // ---------------------------------------------------
 
     final String name =
-        result.name ?? '';
+        authViewModel.userName ?? '';
 
     final String role =
-        result.role ?? '';
+        authViewModel.userRole ?? '';
 
     print('Final login role: $role');
     print('Final login name: $name');
@@ -150,7 +131,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
       Navigator.pushReplacement(
         context,
-
         MaterialPageRoute(
           builder: (context) =>
               UserHomeScreen(
@@ -170,7 +150,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
       Navigator.pushReplacement(
         context,
-
         MaterialPageRoute(
           builder: (context) =>
               WorkerHomeScreen(
@@ -202,7 +181,6 @@ class _LoginScreenState extends State<LoginScreen> {
         emailController.text.trim();
 
     if (email.isEmpty) {
-
       showMessage(
         'Enter your email first.',
         Colors.orange,
@@ -212,35 +190,33 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     // ---------------------------------------------------
-    // START LOADING
+    // GET AUTH VIEWMODEL
     // ---------------------------------------------------
 
-    setState(() {
-      isLoading = true;
-    });
+    final AuthViewModel authViewModel =
+        context.read<AuthViewModel>();
 
     // ---------------------------------------------------
     // RESET PASSWORD
     // ---------------------------------------------------
 
-    final LoginResult result =
-        await loginController.forgotPassword(
+    final bool success =
+        await authViewModel.resetPassword(
       email,
     );
 
     if (!mounted) return;
 
     // ---------------------------------------------------
-    // STOP LOADING
+    // SHOW MESSAGE
     // ---------------------------------------------------
 
-    setState(() {
-      isLoading = false;
-    });
-
     showMessage(
-      result.message,
-      result.isSuccess
+      success
+          ? 'Password reset email sent. Check your inbox.'
+          : authViewModel.errorMessage ??
+              'Unable to reset password.',
+      success
           ? Colors.green
           : Colors.red,
     );
@@ -254,7 +230,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
     Navigator.push(
       context,
-
       MaterialPageRoute(
         builder: (context) =>
             SignupScreen(
@@ -265,7 +240,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   // =====================================================
-  // SHOW SNACKBAR
+  // SHOW MESSAGE
   // =====================================================
 
   void showMessage(
@@ -295,6 +270,13 @@ class _LoginScreenState extends State<LoginScreen> {
     final bool isUser =
         widget.role == UserRole.user;
 
+    // ===================================================
+    // LISTEN TO AUTH VIEWMODEL
+    // ===================================================
+
+    final bool isLoading =
+        context.watch<AuthViewModel>().isLoading;
+
     return Scaffold(
 
       // =================================================
@@ -307,7 +289,6 @@ class _LoginScreenState extends State<LoginScreen> {
               ? 'User Login'
               : 'Worker Login',
         ),
-
         centerTitle: true,
       ),
 
@@ -424,4 +405,3 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
-

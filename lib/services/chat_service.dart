@@ -1,5 +1,5 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/chat_model.dart';
 import '../models/message_model.dart';
 
@@ -10,7 +10,6 @@ class ChatService {
   // =====================================================
   // CREATE CHAT
   // =====================================================
-
   Future<String> createChat({
     required String userId,
     required String workerId,
@@ -51,7 +50,6 @@ class ChatService {
   // =====================================================
   // GET CHAT BY SERVICE REQUEST
   // =====================================================
-
   Future<ChatModel?> getChatByRequest(
     String serviceRequestId,
   ) async {
@@ -79,7 +77,6 @@ class ChatService {
   // =====================================================
   // SEND MESSAGE
   // =====================================================
-
   Future<void> sendMessage({
     required String chatId,
     required String senderId,
@@ -107,7 +104,6 @@ class ChatService {
   // =====================================================
   // GET MESSAGES - REAL TIME
   // =====================================================
-
   Stream<List<MessageModel>> getMessages(
     String chatId,
   ) {
@@ -135,7 +131,6 @@ class ChatService {
   // =====================================================
   // MARK MESSAGE AS SEEN
   // =====================================================
-
   Future<void> markMessageAsSeen({
     required String chatId,
     required String messageId,
@@ -151,9 +146,40 @@ class ChatService {
   }
 
   // =====================================================
+  // DELETE CHAT
+  // =====================================================
+  Future<void> deleteChat(
+    String chatId,
+  ) async {
+    // Get all messages inside this chat
+    final messagesSnapshot = await _firestore
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .get();
+
+    // Firestore batch
+    WriteBatch batch = _firestore.batch();
+
+    // Delete every message
+    for (final doc in messagesSnapshot.docs) {
+      batch.delete(doc.reference);
+    }
+
+    // Delete the main chat document
+    final chatRef = _firestore
+        .collection('chats')
+        .doc(chatId);
+
+    batch.delete(chatRef);
+
+    // Execute all deletes
+    await batch.commit();
+  }
+
+  // =====================================================
   // GET USER CHATS
   // =====================================================
-
   Stream<List<ChatModel>> getUserChats(
     String userId,
   ) {
@@ -179,7 +205,6 @@ class ChatService {
   // =====================================================
   // GET WORKER CHATS
   // =====================================================
-
   Stream<List<ChatModel>> getWorkerChats(
     String workerId,
   ) {

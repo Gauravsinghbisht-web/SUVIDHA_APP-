@@ -4,6 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/service_request_model.dart';
 import '../../providers/service_request_provider.dart';
+import '../../models/chat_model.dart';
+import '../../services/chat_service.dart';
+import '../chat/chat_screen.dart';
 
 class UserRequestsScreen extends StatefulWidget {
   const UserRequestsScreen({
@@ -17,6 +20,22 @@ class UserRequestsScreen extends StatefulWidget {
 
 class _UserRequestsScreenState
     extends State<UserRequestsScreen> {
+  // =====================================================
+  // CHAT SERVICE
+  // =====================================================
+
+  final ChatService _chatService = ChatService();
+
+  // =====================================================
+  // CHAT LOADING
+  // =====================================================
+
+  String? _openingChatRequestId;
+
+  // =====================================================
+  // INIT
+  // =====================================================
+
   @override
   void initState() {
     super.initState();
@@ -29,6 +48,7 @@ class _UserRequestsScreenState
   // =====================================================
   // LOAD USER REQUESTS
   // =====================================================
+
   Future<void> _loadRequests() async {
     final User? currentUser =
         FirebaseAuth.instance.currentUser;
@@ -36,41 +56,167 @@ class _UserRequestsScreenState
     if (currentUser == null) {
       return;
     }
+
     await context
         .read<ServiceRequestProvider>()
         .getUserRequests(currentUser.uid);
   }
 
   // =====================================================
+  // OPEN CHAT
+  // =====================================================
+
+  Future<void> _openChat(
+    ServiceRequestModel request,
+  ) async {
+    final User? currentUser =
+        FirebaseAuth.instance.currentUser;
+
+    if (currentUser == null) {
+      _showMessage('You are not logged in.');
+      return;
+    }
+
+    // ---------------------------------------------------
+    // Only accepted requests can open chat
+    // ---------------------------------------------------
+
+    if (request.status != 'accepted') {
+      return;
+    }
+
+    // ---------------------------------------------------
+    // Worker ID must exist
+    // ---------------------------------------------------
+
+    if (request.workerId.isEmpty) {
+      _showMessage(
+        'Worker information is not available.',
+      );
+      return;
+    }
+
+    setState(() {
+      _openingChatRequestId = request.id;
+    });
+
+    try {
+      // -------------------------------------------------
+      // Create chat if it doesn't exist.
+      // If it already exists, createChat() returns
+      // the existing chat ID.
+      // -------------------------------------------------
+
+      await _chatService.createChat(
+        userId: currentUser.uid,
+        workerId: request.workerId,
+        serviceRequestId: request.id,
+      );
+
+      // -------------------------------------------------
+      // Get the complete ChatModel
+      // -------------------------------------------------
+
+      final ChatModel? chat =
+          await _chatService.getChatByRequest(
+        request.id,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      if (chat == null) {
+        _showMessage(
+          'Unable to open chat.',
+        );
+        return;
+      }
+
+      // -------------------------------------------------
+      // Open Chat Screen
+      // -------------------------------------------------
+
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ChatScreen(
+            chat: chat,
+          ),
+        ),
+      );
+    } catch (e) {
+      debugPrint(
+        'Open Chat Error: $e',
+      );
+
+      if (mounted) {
+        _showMessage(
+          'Unable to open chat.',
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _openingChatRequestId = null;
+        });
+      }
+    }
+  }
+
+  // =====================================================
+  // SHOW MESSAGE
+  // =====================================================
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+      ),
+    );
+  }
+
+  // =====================================================
   // FORMAT DATE
   // =====================================================
+
   String _formatDate(DateTime date) {
     final day =
         date.day.toString().padLeft(2, '0');
+
     final month =
         date.month.toString().padLeft(2, '0');
+
     final year =
         date.year.toString();
+
     final hour =
         date.hour.toString().padLeft(2, '0');
+
     final minute =
         date.minute.toString().padLeft(2, '0');
+
     return '$day/$month/$year $hour:$minute';
   }
 
   // =====================================================
   // STATUS COLOR
   // =====================================================
+
   Color _statusColor(String status) {
     switch (status) {
       case 'accepted':
         return Colors.green;
+
       case 'rejected':
         return Colors.red;
+
       case 'completed':
         return Colors.blue;
+
       case 'started':
         return Colors.orange;
+
       default:
         return Colors.grey;
     }
@@ -79,11 +225,14 @@ class _UserRequestsScreenState
   // =====================================================
   // BUILD
   // =====================================================
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('My Requests'),
+        title: const Text(
+          'My Requests',
+        ),
         centerTitle: true,
       ),
 
@@ -96,6 +245,7 @@ class _UserRequestsScreenState
           // =============================================
           // LOADING
           // =============================================
+
           if (provider.isLoading) {
             return const Center(
               child: CircularProgressIndicator(),
@@ -105,11 +255,14 @@ class _UserRequestsScreenState
           // =============================================
           // ERROR
           // =============================================
+
           if (provider.errorMessage != null) {
             return Center(
               child: Column(
-                mainAxisAlignment : MainAxisAlignment.center,
-                children: [ const Icon(
+                mainAxisAlignment:
+                    MainAxisAlignment.center,
+                children: [
+                  const Icon(
                     Icons.error_outline,
                     size: 50,
                   ),
@@ -125,7 +278,9 @@ class _UserRequestsScreenState
 
                   ElevatedButton(
                     onPressed: _loadRequests,
-                    child: const Text('Try Again'),
+                    child: const Text(
+                      'Try Again',
+                    ),
                   ),
                 ],
               ),
@@ -135,6 +290,7 @@ class _UserRequestsScreenState
           // =============================================
           // NO REQUESTS
           // =============================================
+
           if (provider.requests.isEmpty) {
             return RefreshIndicator(
               onRefresh: _loadRequests,
@@ -143,6 +299,7 @@ class _UserRequestsScreenState
                     const AlwaysScrollableScrollPhysics(),
                 children: const [
                   SizedBox(height: 150),
+
                   Center(
                     child: Icon(
                       Icons.assignment_outlined,
@@ -151,8 +308,10 @@ class _UserRequestsScreenState
                   ),
 
                   SizedBox(height: 20),
+
                   Center(
-                    child: Text('No service requests yet.',
+                    child: Text(
+                      'No service requests yet.',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight:
@@ -172,15 +331,19 @@ class _UserRequestsScreenState
           return RefreshIndicator(
             onRefresh: _loadRequests,
             child: ListView.builder(
-              padding: const EdgeInsets.all(16),
+              padding:
+                  const EdgeInsets.all(16),
+
               itemCount:
                   provider.requests.length,
+
               itemBuilder: (
                 context,
                 index,
               ) {
                 final ServiceRequestModel request =
                     provider.requests[index];
+
                 return _requestCard(request);
               },
             ),
@@ -199,33 +362,42 @@ class _UserRequestsScreenState
   ) {
     final Color statusColor =
         _statusColor(request.status);
+
+    final bool isAccepted =
+        request.status == 'accepted';
+
+    final bool isOpeningChat =
+        _openingChatRequestId == request.id;
+
     return Card(
       margin: const EdgeInsets.only(
         bottom: 15,
       ),
 
       elevation: 2,
+
       shape: RoundedRectangleBorder(
         borderRadius:
             BorderRadius.circular(15),
       ),
 
       child: Padding(
-        padding: const EdgeInsets.all(18),
+        padding:
+            const EdgeInsets.all(18),
 
         child: Column(
           crossAxisAlignment:
               CrossAxisAlignment.start,
 
           children: [
-            // ===========================================
+            // =========================================
             // SERVICE NAME
-            // ===========================================
+            // =========================================
 
             Row(
               children: [
-                CircleAvatar(
-                  child: const Icon(
+                const CircleAvatar(
+                  child: Icon(
                     Icons.home_repair_service,
                   ),
                 ),
@@ -235,7 +407,8 @@ class _UserRequestsScreenState
                 Expanded(
                   child: Text(
                     request.serviceType,
-                    style: const TextStyle(
+                    style:
+                        const TextStyle(
                       fontSize: 20,
                       fontWeight:
                           FontWeight.bold,
@@ -247,9 +420,9 @@ class _UserRequestsScreenState
 
             const SizedBox(height: 18),
 
-            // ===========================================
+            // =========================================
             // STATUS
-            // ===========================================
+            // =========================================
 
             Row(
               children: [
@@ -268,7 +441,8 @@ class _UserRequestsScreenState
                     vertical: 6,
                   ),
 
-                  decoration: BoxDecoration(
+                  decoration:
+                      BoxDecoration(
                     color: statusColor
                         .withOpacity(0.12),
 
@@ -281,7 +455,8 @@ class _UserRequestsScreenState
                         .toUpperCase(),
 
                     style: TextStyle(
-                      color: statusColor,
+                      color:
+                          statusColor,
                       fontWeight:
                           FontWeight.bold,
                     ),
@@ -292,16 +467,17 @@ class _UserRequestsScreenState
 
             const SizedBox(height: 12),
 
-            // ===========================================
+            // =========================================
             // REQUESTED DATE
-            // ===========================================
+            // =========================================
 
             Row(
               children: [
                 Icon(
                   Icons.access_time,
                   size: 18,
-                  color: Colors.grey.shade600,
+                  color:
+                      Colors.grey.shade600,
                 ),
 
                 const SizedBox(width: 8),
@@ -321,19 +497,21 @@ class _UserRequestsScreenState
 
             const SizedBox(height: 12),
 
-            // ===========================================
-            // WORKER
-            // ===========================================
+            // =========================================
+            // ACCEPTED WORKER
+            // =========================================
 
-            if (request.status == 'accepted' &&
+            if (isAccepted &&
                 request.workerId.isNotEmpty)
               Container(
-                width: double.infinity,
+                width:
+                    double.infinity,
 
                 padding:
                     const EdgeInsets.all(12),
 
-                decoration: BoxDecoration(
+                decoration:
+                    BoxDecoration(
                   borderRadius:
                       BorderRadius.circular(10),
 
@@ -345,7 +523,8 @@ class _UserRequestsScreenState
                   children: [
                     const Icon(
                       Icons.person,
-                      color: Colors.green,
+                      color:
+                          Colors.green,
                     ),
 
                     const SizedBox(width: 10),
@@ -355,7 +534,8 @@ class _UserRequestsScreenState
                         'Worker assigned\n'
                         '${request.workerId}',
 
-                        style: const TextStyle(
+                        style:
+                            const TextStyle(
                           fontWeight:
                               FontWeight.w500,
                         ),
@@ -365,18 +545,21 @@ class _UserRequestsScreenState
                 ),
               ),
 
-            // ===========================================
+            // =========================================
             // PENDING MESSAGE
-            // ===========================================
+            // =========================================
 
-            if (request.status == 'pending')
+            if (request.status ==
+                'pending')
               Container(
-                width: double.infinity,
+                width:
+                    double.infinity,
 
                 padding:
                     const EdgeInsets.all(12),
 
-                decoration: BoxDecoration(
+                decoration:
+                    BoxDecoration(
                   borderRadius:
                       BorderRadius.circular(10),
 
@@ -388,7 +571,8 @@ class _UserRequestsScreenState
                   children: [
                     Icon(
                       Icons.hourglass_empty,
-                      color: Colors.orange,
+                      color:
+                          Colors.orange,
                     ),
 
                     SizedBox(width: 10),
@@ -401,6 +585,52 @@ class _UserRequestsScreenState
                   ],
                 ),
               ),
+
+            // =========================================
+            // CHAT BUTTON
+            // =========================================
+
+            if (isAccepted) ...[
+              const SizedBox(height: 15),
+
+              Align(
+                alignment:
+                    Alignment.centerRight,
+
+                child: SizedBox(
+                  height: 42,
+
+                  child: ElevatedButton.icon(
+                    onPressed:
+                        isOpeningChat
+                            ? null
+                            : () {
+                                _openChat(
+                                  request,
+                                );
+                              },
+
+                    icon: isOpeningChat
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child:
+                                CircularProgressIndicator(
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Icon(
+                            Icons.chat_bubble_outline,
+                            size: 19,
+                          ),
+
+                    label: const Text(
+                      'Chat',
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
