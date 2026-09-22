@@ -142,15 +142,27 @@ class UserChatScreen extends StatelessWidget {
     }
 
     return Scaffold(
+      backgroundColor:
+          Theme.of(context).scaffoldBackgroundColor,
+
+      // ===================================================
+      // APP BAR
+      // ===================================================
+
       appBar: AppBar(
+        elevation: 0,
+        centerTitle: true,
         title: const Text(
           'Chats',
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
         ),
-        centerTitle: true,
       ),
 
       // ===================================================
-      // GET USER CHATS - REAL TIME
+      // CHAT LIST
       // ===================================================
 
       body: StreamBuilder<List<ChatModel>>(
@@ -177,10 +189,33 @@ class UserChatScreen extends StatelessWidget {
           if (snapshot.hasError) {
             return Center(
               child: Padding(
-                padding: const EdgeInsets.all(20),
-                child: Text(
-                  'Error loading chats:\n${snapshot.error}',
-                  textAlign: TextAlign.center,
+                padding: const EdgeInsets.all(25),
+                child: Column(
+                  mainAxisAlignment:
+                      MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      size: 60,
+                    ),
+
+                    const SizedBox(height: 15),
+
+                    const Text(
+                      'Unable to load chats',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    Text(
+                      '${snapshot.error}',
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
               ),
             );
@@ -197,43 +232,56 @@ class UserChatScreen extends StatelessWidget {
           // ===============================================
 
           if (chats.isEmpty) {
-            return const Center(
-              child: Column(
-                mainAxisAlignment:
-                    MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.chat_bubble_outline,
-                    size: 70,
-                    color: Colors.grey,
-                  ),
-
-                  SizedBox(height: 15),
-
-                  Text(
-                    'No chats yet.',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-
-                  SizedBox(height: 8),
-
-                  Padding(
-                    padding:
-                        EdgeInsets.symmetric(
-                      horizontal: 30,
-                    ),
-                    child: Text(
-                      'Chats with workers will appear here.',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.grey,
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(30),
+                child: Column(
+                  mainAxisAlignment:
+                      MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      height: 100,
+                      width: 100,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: 0.10),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.chat_bubble_outline,
+                        size: 50,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary,
                       ),
                     ),
-                  ),
-                ],
+
+                    const SizedBox(height: 25),
+
+                    const Text(
+                      'No chats yet',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    Text(
+                      'Chats with workers will appear here\n'
+                      'after a service request is accepted.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: Colors.grey.shade600,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
           }
@@ -243,137 +291,238 @@ class UserChatScreen extends StatelessWidget {
           // ===============================================
 
           return ListView.separated(
-            padding: const EdgeInsets.all(15),
+            padding: const EdgeInsets.fromLTRB(
+              16,
+              18,
+              16,
+              25,
+            ),
             itemCount: chats.length,
-
             separatorBuilder: (context, index) {
               return const SizedBox(
-                height: 10,
+                height: 12,
               );
             },
-
             itemBuilder: (context, index) {
               final chat = chats[index];
 
-              return Card(
-                elevation: 2,
-                child: ListTile(
-                  contentPadding:
-                      const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
+              return _buildChatCard(
+                context,
+                chat,
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  // =====================================================
+  // CHAT CARD
+  // =====================================================
+
+  Widget _buildChatCard(
+    BuildContext context,
+    ChatModel chat,
+  ) {
+    final primaryColor =
+        Theme.of(context).colorScheme.primary;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ChatScreen(
+                chat: chat,
+              ),
+            ),
+          );
+        },
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(
+                  alpha: 0.06,
+                ),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            children: [
+              // =========================================
+              // WORKER AVATAR
+              // =========================================
+
+              Container(
+                height: 58,
+                width: 58,
+                decoration: BoxDecoration(
+                  color: primaryColor.withValues(
+                    alpha: 0.12,
                   ),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.person,
+                  size: 30,
+                  color: primaryColor,
+                ),
+              ),
 
-                  // =====================================
-                  // WORKER ICON
-                  // =====================================
+              const SizedBox(width: 15),
 
-                  leading: const CircleAvatar(
-                    radius: 28,
-                    child: Icon(
-                      Icons.person,
-                      size: 30,
-                    ),
-                  ),
+              // =========================================
+              // WORKER INFORMATION
+              // =========================================
 
-                  // =====================================
-                  // WORKER NAME
-                  // =====================================
+              Expanded(
+                child: Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
+                  children: [
+                    // WORKER NAME
 
-                  title: FutureBuilder<String>(
-                    future: _getWorkerName(
-                      chat.workerId,
-                    ),
+                    FutureBuilder<String>(
+                      future: _getWorkerName(
+                        chat.workerId,
+                      ),
+                      builder:
+                          (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Text(
+                            'Loading...',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight:
+                                  FontWeight.bold,
+                            ),
+                          );
+                        }
 
-                    builder:
-                        (context, snapshot) {
-                      if (snapshot.connectionState ==
-                          ConnectionState.waiting) {
-                        return const Text(
-                          'Loading...',
-                          style: TextStyle(
+                        return Text(
+                          snapshot.data ?? 'Worker',
+                          maxLines: 1,
+                          overflow:
+                              TextOverflow.ellipsis,
+                          style: const TextStyle(
                             fontSize: 17,
                             fontWeight:
                                 FontWeight.bold,
                           ),
                         );
-                      }
+                      },
+                    ),
 
-                      return Text(
-                        snapshot.data ?? 'Worker',
-                        style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight:
-                              FontWeight.bold,
+                    const SizedBox(height: 6),
+
+                    // SERVICE REQUEST
+
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.assignment_outlined,
+                          size: 16,
+                          color:
+                              Colors.grey.shade600,
                         ),
-                      );
-                    },
-                  ),
-
-                  // =====================================
-                  // SERVICE REQUEST
-                  // =====================================
-
-                  subtitle: Text(
-                    'Service Request: ${chat.serviceRequestId}',
-                    maxLines: 1,
-                    overflow:
-                        TextOverflow.ellipsis,
-                  ),
-
-                  // =====================================
-                  // DELETE + ARROW
-                  // =====================================
-
-                  trailing: Row(
-                    mainAxisSize:
-                        MainAxisSize.min,
-                    children: [
-                      // DELETE BUTTON
-
-                      IconButton(
-                        icon: const Icon(
-                          Icons.delete_outline,
-                          color: Colors.red,
+                        const SizedBox(width: 5),
+                        Expanded(
+                          child: Text(
+                            'Service Request: '
+                            '${chat.serviceRequestId}',
+                            maxLines: 1,
+                            overflow:
+                                TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color:
+                                  Colors.grey.shade600,
+                            ),
+                          ),
                         ),
-                        tooltip: 'Delete chat',
-                        onPressed: () {
-                          _confirmDelete(
-                            context,
-                            chat,
-                          );
-                        },
-                      ),
+                      ],
+                    ),
 
-                      // ARROW
+                    const SizedBox(height: 5),
 
-                      const Icon(
-                        Icons.arrow_forward_ios,
-                        size: 18,
-                      ),
-                    ],
-                  ),
+                    // CHAT LABEL
 
-                  // =====================================
-                  // OPEN CHAT
-                  // =====================================
-
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            ChatScreen(
-                          chat: chat,
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.chat_bubble_outline,
+                          size: 15,
+                          color: primaryColor,
                         ),
-                      ),
-                    );
-                  },
+                        const SizedBox(width: 5),
+                        Text(
+                          'Open conversation',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight:
+                                FontWeight.w500,
+                            color: primaryColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              );
-            },
-          );
-        },
+              ),
+
+              const SizedBox(width: 5),
+
+              // =========================================
+              // DELETE BUTTON
+              // =========================================
+
+              IconButton(
+                tooltip: 'Delete chat',
+                onPressed: () {
+                  _confirmDelete(
+                    context,
+                    chat,
+                  );
+                },
+                icon: const Icon(
+                  Icons.delete_outline,
+                  color: Colors.red,
+                ),
+              ),
+
+              // =========================================
+              // ARROW
+              // =========================================
+
+              Container(
+                height: 38,
+                width: 38,
+                decoration: BoxDecoration(
+                  color: primaryColor.withValues(
+                    alpha: 0.10,
+                  ),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.arrow_forward_ios,
+                  size: 15,
+                  color: primaryColor,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

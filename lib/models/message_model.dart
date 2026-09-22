@@ -1,3 +1,4 @@
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class MessageModel {
@@ -5,6 +6,8 @@ class MessageModel {
   final String senderId;
   final String message;
   final DateTime createdAt;
+
+  final bool delivered;
   final bool seen;
 
   MessageModel({
@@ -12,6 +15,7 @@ class MessageModel {
     required this.senderId,
     required this.message,
     required this.createdAt,
+    required this.delivered,
     required this.seen,
   });
 
@@ -20,6 +24,7 @@ class MessageModel {
       'senderId': senderId,
       'message': message,
       'createdAt': Timestamp.fromDate(createdAt),
+      'delivered': delivered,
       'seen': seen,
     };
   }
@@ -37,6 +42,7 @@ class MessageModel {
       createdAt: createdAt is Timestamp
           ? createdAt.toDate()
           : DateTime.now(),
+      delivered: map['delivered'] ?? false,
       seen: map['seen'] ?? false,
     );
   }

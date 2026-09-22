@@ -31,6 +31,7 @@ class _ChatScreenState extends State<ChatScreen> {
   // =====================================================
   // CURRENT USER
   // =====================================================
+
   String get currentUserId {
     return FirebaseAuth.instance.currentUser?.uid ?? '';
   }
@@ -38,6 +39,7 @@ class _ChatScreenState extends State<ChatScreen> {
   // =====================================================
   // SEND MESSAGE
   // =====================================================
+
   Future<void> _sendMessage() async {
     final message =
         _messageController.text.trim();
@@ -66,7 +68,6 @@ class _ChatScreenState extends State<ChatScreen> {
 
       _messageController.clear();
 
-      // Give Firestore time to update the stream
       await Future.delayed(
         const Duration(milliseconds: 100),
       );
@@ -92,12 +93,80 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   // =====================================================
+  // MARK INCOMING MESSAGES AS DELIVERED
+  // =====================================================
+
+  Future<void> _markMessagesAsDelivered(
+    List<MessageModel> messages,
+  ) async {
+    if (currentUserId.isEmpty) {
+      return;
+    }
+
+    for (final message in messages) {
+      if (message.senderId == currentUserId) {
+        continue;
+      }
+
+      if (message.delivered) {
+        continue;
+      }
+
+      try {
+        await _chatService.markMessageAsDelivered(
+          chatId: widget.chat.id,
+          messageId: message.id,
+        );
+      } catch (e) {
+        debugPrint(
+          'Mark delivered error: $e',
+        );
+      }
+    }
+  }
+
+  // =====================================================
+  // MARK INCOMING MESSAGES AS SEEN
+  // =====================================================
+
+  Future<void> _markMessagesAsSeen(
+    List<MessageModel> messages,
+  ) async {
+    if (currentUserId.isEmpty) {
+      return;
+    }
+
+    for (final message in messages) {
+      if (message.senderId == currentUserId) {
+        continue;
+      }
+
+      if (message.seen) {
+        continue;
+      }
+
+      try {
+        await _chatService.markMessageAsSeen(
+          chatId: widget.chat.id,
+          messageId: message.id,
+        );
+      } catch (e) {
+        debugPrint(
+          'Mark seen error: $e',
+        );
+      }
+    }
+  }
+
+  // =====================================================
   // SCROLL TO BOTTOM
   // =====================================================
+
   void _scrollToBottom() {
     if (!_scrollController.hasClients) {
       return;
     }
+
     _scrollController.animateTo(
       _scrollController.position.maxScrollExtent,
       duration: const Duration(
@@ -108,8 +177,9 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   // =====================================================
-  // MESSAGE
+  // SHOW MESSAGE
   // =====================================================
+
   void _showMessage(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -121,22 +191,83 @@ class _ChatScreenState extends State<ChatScreen> {
   // =====================================================
   // FORMAT TIME
   // =====================================================
+
   String _formatTime(DateTime date) {
     final hour = date.hour == 0
         ? 12
         : date.hour > 12
             ? date.hour - 12
             : date.hour;
+
     final minute =
         date.minute.toString().padLeft(2, '0');
+
     final period =
         date.hour >= 12 ? 'PM' : 'AM';
+
     return '$hour:$minute $period';
+  }
+
+  // =====================================================
+  // MESSAGE STATUS
+  // =====================================================
+
+  Widget _messageStatus(
+    MessageModel message,
+  ) {
+    // Only show status on our own messages.
+    if (message.senderId != currentUserId) {
+      return const SizedBox.shrink();
+    }
+
+    // ===================================================
+    // SENT
+    // ===================================================
+
+    if (!message.delivered) {
+      return const Text(
+        '✓',
+        style: TextStyle(
+          fontSize: 13,
+          color: Colors.white70,
+          fontWeight: FontWeight.bold,
+        ),
+      );
+    }
+
+    // ===================================================
+    // SEEN
+    // ===================================================
+
+    if (message.seen) {
+      return const Text(
+        '✓✓',
+        style: TextStyle(
+          fontSize: 13,
+          color: Colors.lightBlueAccent,
+          fontWeight: FontWeight.bold,
+        ),
+      );
+    }
+
+    // ===================================================
+    // DELIVERED
+    // ===================================================
+
+    return const Text(
+      '✓✓',
+      style: TextStyle(
+        fontSize: 13,
+        color: Colors.white70,
+        fontWeight: FontWeight.bold,
+      ),
+    );
   }
 
   // =====================================================
   // MESSAGE BUBBLE
   // =====================================================
+
   Widget _messageBubble(
     MessageModel message,
   ) {
@@ -175,6 +306,10 @@ class _ChatScreenState extends State<ChatScreen> {
           crossAxisAlignment:
               CrossAxisAlignment.end,
           children: [
+            // =========================================
+            // MESSAGE TEXT
+            // =========================================
+
             Align(
               alignment: Alignment.centerLeft,
               child: Text(
@@ -190,16 +325,33 @@ class _ChatScreenState extends State<ChatScreen> {
 
             const SizedBox(height: 5),
 
-            Text(
-              _formatTime(
-                message.createdAt,
-              ),
-              style: TextStyle(
-                fontSize: 10,
-                color: isMe
-                    ? Colors.white70
-                    : Colors.grey.shade600,
-              ),
+            // =========================================
+            // TIME + STATUS
+            // =========================================
+
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  _formatTime(
+                    message.createdAt,
+                  ),
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: isMe
+                        ? Colors.white70
+                        : Colors.grey.shade600,
+                  ),
+                ),
+
+                if (isMe) ...[
+                  const SizedBox(width: 5),
+
+                  _messageStatus(
+                    message,
+                  ),
+                ],
+              ],
             ),
           ],
         ),
@@ -210,6 +362,7 @@ class _ChatScreenState extends State<ChatScreen> {
   // =====================================================
   // BUILD
   // =====================================================
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -225,6 +378,7 @@ class _ChatScreenState extends State<ChatScreen> {
           // =============================================
           // MESSAGES
           // =============================================
+
           Expanded(
             child: StreamBuilder<List<MessageModel>>(
               stream: _chatService.getMessages(
@@ -237,6 +391,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 // =======================================
                 // ERROR
                 // =======================================
+
                 if (snapshot.hasError) {
                   return Center(
                     child: Text(
@@ -251,6 +406,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 // =======================================
                 // LOADING
                 // =======================================
+
                 if (snapshot.connectionState ==
                         ConnectionState.waiting &&
                     !snapshot.hasData) {
@@ -266,6 +422,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 // =======================================
                 // NO MESSAGES
                 // =======================================
+
                 if (messages.isEmpty) {
                   return const Center(
                     child: Column(
@@ -299,12 +456,25 @@ class _ChatScreenState extends State<ChatScreen> {
                 }
 
                 // =======================================
-                // MESSAGE LIST
+                // UPDATE MESSAGE STATUS
                 // =======================================
+
                 WidgetsBinding.instance
                     .addPostFrameCallback((_) {
+                  _markMessagesAsDelivered(
+                    messages,
+                  );
+
+                  _markMessagesAsSeen(
+                    messages,
+                  );
+
                   _scrollToBottom();
                 });
+
+                // =======================================
+                // MESSAGE LIST
+                // =======================================
 
                 return ListView.builder(
                   controller:
@@ -332,6 +502,7 @@ class _ChatScreenState extends State<ChatScreen> {
           // =============================================
           // MESSAGE INPUT
           // =============================================
+
           SafeArea(
             child: Container(
               padding: const EdgeInsets.symmetric(
@@ -394,6 +565,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   // ===================================
                   // SEND BUTTON
                   // ===================================
+
                   IconButton(
                     onPressed: _isSending
                         ? null
@@ -423,6 +595,7 @@ class _ChatScreenState extends State<ChatScreen> {
   // =====================================================
   // DISPOSE
   // =====================================================
+
   @override
   void dispose() {
     _messageController.dispose();

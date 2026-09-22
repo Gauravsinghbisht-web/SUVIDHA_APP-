@@ -1,5 +1,5 @@
-
 import 'package:cloud_firestore/cloud_firestore.dart';
+
 import '../models/chat_model.dart';
 import '../models/message_model.dart';
 
@@ -10,12 +10,12 @@ class ChatService {
   // =====================================================
   // CREATE CHAT
   // =====================================================
+
   Future<String> createChat({
     required String userId,
     required String workerId,
     required String serviceRequestId,
   }) async {
-    // Check if chat already exists for this request
     final existingChat = await _firestore
         .collection('chats')
         .where(
@@ -25,12 +25,10 @@ class ChatService {
         .limit(1)
         .get();
 
-    // Return existing chat
     if (existingChat.docs.isNotEmpty) {
       return existingChat.docs.first.id;
     }
 
-    // Create new chat
     final chatRef =
         _firestore.collection('chats').doc();
 
@@ -42,7 +40,9 @@ class ChatService {
       createdAt: DateTime.now(),
     );
 
-    await chatRef.set(chat.toMap());
+    await chatRef.set(
+      chat.toMap(),
+    );
 
     return chatRef.id;
   }
@@ -50,6 +50,7 @@ class ChatService {
   // =====================================================
   // GET CHAT BY SERVICE REQUEST
   // =====================================================
+
   Future<ChatModel?> getChatByRequest(
     String serviceRequestId,
   ) async {
@@ -77,6 +78,7 @@ class ChatService {
   // =====================================================
   // SEND MESSAGE
   // =====================================================
+
   Future<void> sendMessage({
     required String chatId,
     required String senderId,
@@ -93,6 +95,7 @@ class ChatService {
       senderId: senderId,
       message: message.trim(),
       createdAt: DateTime.now(),
+      delivered: false,
       seen: false,
     );
 
@@ -104,6 +107,7 @@ class ChatService {
   // =====================================================
   // GET MESSAGES - REAL TIME
   // =====================================================
+
   Stream<List<MessageModel>> getMessages(
     String chatId,
   ) {
@@ -129,8 +133,27 @@ class ChatService {
   }
 
   // =====================================================
+  // MARK MESSAGE AS DELIVERED
+  // =====================================================
+
+  Future<void> markMessageAsDelivered({
+    required String chatId,
+    required String messageId,
+  }) async {
+    await _firestore
+        .collection('chats')
+        .doc(chatId)
+        .collection('messages')
+        .doc(messageId)
+        .update({
+      'delivered': true,
+    });
+  }
+
+  // =====================================================
   // MARK MESSAGE AS SEEN
   // =====================================================
+
   Future<void> markMessageAsSeen({
     required String chatId,
     required String messageId,
@@ -141,6 +164,7 @@ class ChatService {
         .collection('messages')
         .doc(messageId)
         .update({
+      'delivered': true,
       'seen': true,
     });
   }
@@ -148,38 +172,36 @@ class ChatService {
   // =====================================================
   // DELETE CHAT
   // =====================================================
+
   Future<void> deleteChat(
     String chatId,
   ) async {
-    // Get all messages inside this chat
     final messagesSnapshot = await _firestore
         .collection('chats')
         .doc(chatId)
         .collection('messages')
         .get();
 
-    // Firestore batch
-    WriteBatch batch = _firestore.batch();
+    final WriteBatch batch =
+        _firestore.batch();
 
-    // Delete every message
     for (final doc in messagesSnapshot.docs) {
       batch.delete(doc.reference);
     }
 
-    // Delete the main chat document
     final chatRef = _firestore
         .collection('chats')
         .doc(chatId);
 
     batch.delete(chatRef);
 
-    // Execute all deletes
     await batch.commit();
   }
 
   // =====================================================
   // GET USER CHATS
   // =====================================================
+
   Stream<List<ChatModel>> getUserChats(
     String userId,
   ) {
@@ -205,6 +227,7 @@ class ChatService {
   // =====================================================
   // GET WORKER CHATS
   // =====================================================
+
   Stream<List<ChatModel>> getWorkerChats(
     String workerId,
   ) {

@@ -16,10 +16,6 @@ class ChatModel {
     required this.createdAt,
   });
 
-  // =====================================================
-  // TO MAP
-  // =====================================================
-
   Map<String, dynamic> toMap() {
     return {
       'userId': userId,
@@ -29,10 +25,6 @@ class ChatModel {
     };
   }
 
-  // =====================================================
-  // FROM MAP
-  // =====================================================
-
   factory ChatModel.fromMap(
     String id,
     Map<String, dynamic> map,
@@ -41,8 +33,7 @@ class ChatModel {
       id: id,
       userId: map['userId'] ?? '',
       workerId: map['workerId'] ?? '',
-      serviceRequestId:
-          map['serviceRequestId'] ?? '',
+      serviceRequestId: map['serviceRequestId'] ?? '',
       createdAt: map['createdAt'] is Timestamp
           ? (map['createdAt'] as Timestamp).toDate()
           : DateTime.now(),

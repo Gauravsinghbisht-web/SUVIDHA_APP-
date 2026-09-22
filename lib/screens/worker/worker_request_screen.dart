@@ -1,10 +1,9 @@
 
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/providers/service_request_provider.dart';
 import 'package:flutter_application_1/screens/worker/worker_request_details_screen.dart';
 import 'package:provider/provider.dart';
-import '../../providers/service_request_provider.dart';
 
 class WorkerRequestsScreen extends StatefulWidget {
   const WorkerRequestsScreen({
@@ -22,7 +21,6 @@ class _WorkerRequestsScreenState
   void initState() {
     super.initState();
 
-    // Load pending requests after the screen is created.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadRequests();
     });
@@ -31,10 +29,40 @@ class _WorkerRequestsScreenState
   // =====================================================
   // LOAD REQUESTS
   // =====================================================
+
   Future<void> _loadRequests() async {
     await context
         .read<ServiceRequestProvider>()
         .getPendingRequests();
+  }
+
+  // =====================================================
+  // GET USER NAME
+  // =====================================================
+
+  Future<String> _getUserName(String userId) async {
+    try {
+      final DocumentSnapshot<Map<String, dynamic>> userDoc =
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(userId)
+              .get();
+
+      if (userDoc.exists) {
+        final data = userDoc.data();
+
+        final String? name = data?['name']?.toString();
+
+        if (name != null && name.trim().isNotEmpty) {
+          return name;
+        }
+      }
+
+      return 'User';
+    } catch (e) {
+      debugPrint('Error getting user name: $e');
+      return 'User';
+    }
   }
 
   @override
@@ -47,10 +75,10 @@ class _WorkerRequestsScreenState
 
       body: Consumer<ServiceRequestProvider>(
         builder: (context, provider, child) {
-
           // =================================================
           // LOADING
           // =================================================
+
           if (provider.isLoading) {
             return const Center(
               child: CircularProgressIndicator(),
@@ -60,6 +88,7 @@ class _WorkerRequestsScreenState
           // =================================================
           // ERROR
           // =================================================
+
           if (provider.errorMessage != null) {
             return Center(
               child: Padding(
@@ -94,6 +123,7 @@ class _WorkerRequestsScreenState
           // =================================================
           // NO REQUESTS
           // =================================================
+
           if (provider.requests.isEmpty) {
             return RefreshIndicator(
               onRefresh: _loadRequests,
@@ -139,6 +169,7 @@ class _WorkerRequestsScreenState
           // =================================================
           // REQUEST LIST
           // =================================================
+
           return RefreshIndicator(
             onRefresh: _loadRequests,
             child: ListView.builder(
@@ -147,161 +178,207 @@ class _WorkerRequestsScreenState
               itemBuilder: (context, index) {
                 final request =
                     provider.requests[index];
-                return Card(
-                  margin: const EdgeInsets.only(
-                    bottom: 15,
-                  ),
-                  elevation: 2,
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment:
-                          CrossAxisAlignment.start,
 
-                      children: [
-                        
-                        // ===================================
-                        // SERVICE TYPE
-                        // ===================================
-                        Row(
+                return FutureBuilder<String>(
+                  future: _getUserName(request.userId),
+
+                  builder: (context, userSnapshot) {
+                    // =========================================
+                    // USER NAME LOADING
+                    // =========================================
+
+                    final String userName =
+                        userSnapshot.data ?? 'Loading...';
+
+                    return Card(
+                      margin: const EdgeInsets.only(
+                        bottom: 15,
+                      ),
+                      elevation: 2,
+
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+
+                        child: Column(
+                          crossAxisAlignment:
+                              CrossAxisAlignment.start,
+
                           children: [
-                            const CircleAvatar(
-                              child: Icon(
-                                Icons.home_repair_service,
-                              ),
+                            // =================================
+                            // USER NAME
+                            // =================================
+
+                            Row(
+                              children: [
+                                const CircleAvatar(
+                                  child: Icon(
+                                    Icons.person,
+                                  ),
+                                ),
+
+                                const SizedBox(width: 12),
+
+                                Expanded(
+                                  child: Text(
+                                    userName,
+                                    style:
+                                        const TextStyle(
+                                      fontSize: 19,
+                                      fontWeight:
+                                          FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+
+                                // STATUS
+                                Container(
+                                  padding:
+                                      const EdgeInsets
+                                          .symmetric(
+                                    horizontal: 10,
+                                    vertical: 6,
+                                  ),
+
+                                  decoration:
+                                      BoxDecoration(
+                                    borderRadius:
+                                        BorderRadius
+                                            .circular(20),
+
+                                    color: Colors.orange
+                                        .withValues(
+                                      alpha: 0.15,
+                                    ),
+                                  ),
+
+                                  child: Text(
+                                    request.status
+                                        .toUpperCase(),
+
+                                    style:
+                                        const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight:
+                                          FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
 
-                            const SizedBox(width: 12),
+                            const SizedBox(height: 15),
 
-                            Expanded(
-                              child: Text(
-                                request.serviceType,
-                                style: const TextStyle(
-                                  fontSize: 19,
-                                  fontWeight:
-                                      FontWeight.bold,
+                            // =================================
+                            // SERVICE TYPE
+                            // =================================
+
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons
+                                      .home_repair_service,
+                                  size: 20,
                                 ),
-                              ),
+
+                                const SizedBox(width: 8),
+
+                                Expanded(
+                                  child: Text(
+                                    'Service: '
+                                    '${request.serviceType}',
+                                  ),
+                                ),
+                              ],
                             ),
 
-                            // STATUS
-                            Container(
-                              padding:
-                                  const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 6,
-                              ),
+                            const SizedBox(height: 8),
 
-                              decoration:
-                                  BoxDecoration(
-                                borderRadius:
-                                    BorderRadius.circular(
-                                  20,
+                            // =================================
+                            // SERVICE ID
+                            // =================================
+
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.build_outlined,
+                                  size: 20,
                                 ),
 
-                                color: Colors.orange
-                                    .withValues(
-                                  alpha: 0.15,
+                                const SizedBox(width: 8),
+
+                                Expanded(
+                                  child: Text(
+                                    'Service ID: '
+                                    '${request.serviceId}',
+                                  ),
                                 ),
-                              ),
+                              ],
+                            ),
 
-                              child: Text(
-                                request.status
-                                    .toUpperCase(),
+                            const SizedBox(height: 8),
 
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  fontWeight:
-                                      FontWeight.bold,
+                            // =================================
+                            // REQUEST TIME
+                            // =================================
+
+                            Row(
+                              children: [
+                                const Icon(
+                                  Icons.access_time,
+                                  size: 20,
+                                ),
+
+                                const SizedBox(width: 8),
+
+                                Expanded(
+                                  child: Text(
+                                    'Requested: '
+                                    '${_formatDate(
+                                      request.createdAt,
+                                    )}',
+                                  ),
+                                ),
+                              ],
+                            ),
+
+                            const SizedBox(height: 18),
+
+                            // =================================
+                            // VIEW DETAILS
+                            // =================================
+
+                            SizedBox(
+                              width: double.infinity,
+
+                              child: ElevatedButton(
+                                onPressed: () async {
+                                  final result =
+                                      await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          WorkerRequestDetailsScreen(
+                                        request: request,
+                                      ),
+                                    ),
+                                  );
+
+                                  // Refresh after returning
+                                  if (result == true) {
+                                    _loadRequests();
+                                  }
+                                },
+
+                                child: const Text(
+                                  'View Details',
                                 ),
                               ),
                             ),
                           ],
                         ),
-
-                        const SizedBox(height: 15),
-
-                        // ===================================
-                        // SERVICE ID
-                        // ===================================
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.build_outlined,
-                              size: 20,
-                            ),
-
-                            const SizedBox(width: 8),
-
-                            Expanded(
-                              child: Text(
-                                'Service ID: '
-                                '${request.serviceId}',
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 8),
-
-                        // ===================================
-                        // REQUEST TIME
-                        // ===================================
-
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.access_time,
-                              size: 20,
-                            ),
-
-                            const SizedBox(width: 8),
-
-                            Text(
-                              'Requested: '
-                              '${_formatDate(
-                                request.createdAt,
-                              )}',
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 18),
-
-                        // ===================================
-                        // VIEW DETAILS BUTTON
-                        // ===================================
-                     
-                SizedBox(
-                 width: double.infinity,
-                child: ElevatedButton(
-                onPressed: () async {
-                final result = await Navigator.push(
-                 context,
-                 MaterialPageRoute(
-                 builder: (_) =>
-                 WorkerRequestDetailsScreen(
-                 request: request,
-                 ),
-                 ),
-                  );
-
-      // Refresh requests after returning
-      // from details screen.
-      if (result == true) {
-        _loadRequests();
-      }
-    },
-    child: const Text(
-      'View Details',
-    ),
-  ),
-),
-
-
-                      ],
-                    ),
-                  ),
+                      ),
+                    );
+                  },
                 );
               },
             ),
@@ -322,7 +399,8 @@ class _WorkerRequestsScreenState
     final month =
         date.month.toString().padLeft(2, '0');
 
-    final year = date.year.toString();
+    final year =
+        date.year.toString();
 
     final hour =
         date.hour.toString().padLeft(2, '0');
@@ -333,4 +411,3 @@ class _WorkerRequestsScreenState
     return '$day/$month/$year $hour:$minute';
   }
 }
-

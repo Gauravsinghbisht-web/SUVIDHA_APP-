@@ -11,8 +11,7 @@ class WorkerChatScreen extends StatelessWidget {
     super.key,
   });
 
-  final ChatService _chatService =
-      ChatService();
+  final ChatService _chatService = ChatService();
 
   // =====================================================
   // GET USER NAME
@@ -33,14 +32,108 @@ class WorkerChatScreen extends StatelessWidget {
     return 'User';
   }
 
+  // =====================================================
+  // DELETE CHAT CONFIRMATION
+  // =====================================================
+
+  Future<void> _confirmDelete(
+    BuildContext context,
+    ChatModel chat,
+  ) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text(
+            'Delete Chat?',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: const Text(
+            'Are you sure you want to delete this chat? '
+            'All messages in this conversation will be deleted.',
+          ),
+          actions: [
+            // CANCEL
+            TextButton(
+              onPressed: () {
+                Navigator.pop(
+                  dialogContext,
+                  false,
+                );
+              },
+              child: const Text('Cancel'),
+            ),
+
+            // DELETE
+            TextButton(
+              onPressed: () {
+                Navigator.pop(
+                  dialogContext,
+                  true,
+                );
+              },
+              child: const Text(
+                'Delete',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    // ===================================================
+    // USER CANCELLED
+    // ===================================================
+
+    if (shouldDelete != true) {
+      return;
+    }
+
+    // ===================================================
+    // DELETE CHAT
+    // ===================================================
+
+    try {
+      await _chatService.deleteChat(
+        chat.id,
+      );
+
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Chat deleted successfully.',
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Failed to delete chat: $e',
+            ),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final User? currentUser =
         FirebaseAuth.instance.currentUser;
 
-    // =====================================================
+    // ===================================================
     // WORKER NOT LOGGED IN
-    // =====================================================
+    // ===================================================
 
     if (currentUser == null) {
       return const Scaffold(
@@ -53,16 +146,28 @@ class WorkerChatScreen extends StatelessWidget {
     }
 
     return Scaffold(
+      backgroundColor:
+          Theme.of(context).scaffoldBackgroundColor,
+
+      // =================================================
+      // APP BAR
+      // =================================================
+
       appBar: AppBar(
+        elevation: 0,
+        centerTitle: true,
         title: const Text(
           'Chats',
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+          ),
         ),
-        centerTitle: true,
       ),
 
-      // ===================================================
-      // GET WORKER CHATS - REAL TIME
-      // ===================================================
+      // =================================================
+      // CHAT LIST
+      // =================================================
 
       body: StreamBuilder<List<ChatModel>>(
         stream: _chatService.getWorkerChats(
@@ -70,9 +175,9 @@ class WorkerChatScreen extends StatelessWidget {
         ),
 
         builder: (context, snapshot) {
-          // ===============================================
+          // =============================================
           // LOADING
-          // ===============================================
+          // =============================================
 
           if (snapshot.connectionState ==
               ConnectionState.waiting) {
@@ -81,178 +186,367 @@ class WorkerChatScreen extends StatelessWidget {
             );
           }
 
-          // ===============================================
+          // =============================================
           // ERROR
-          // ===============================================
+          // =============================================
 
           if (snapshot.hasError) {
             return Center(
-              child: Text(
-                'Error loading chats:\n${snapshot.error}',
-                textAlign: TextAlign.center,
+              child: Padding(
+                padding: const EdgeInsets.all(25),
+                child: Column(
+                  mainAxisAlignment:
+                      MainAxisAlignment.center,
+                  children: [
+                    const Icon(
+                      Icons.error_outline,
+                      size: 60,
+                    ),
+
+                    const SizedBox(height: 15),
+
+                    const Text(
+                      'Unable to load chats',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    Text(
+                      '${snapshot.error}',
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
               ),
             );
           }
 
-          // ===============================================
-          // CHAT LIST
-          // ===============================================
+          final chats = snapshot.data ?? [];
 
-          final chats =
-              snapshot.data ?? [];
-
-          // ===============================================
+          // =============================================
           // NO CHATS
-          // ===============================================
+          // =============================================
 
           if (chats.isEmpty) {
-            return const Center(
-              child: Column(
-                mainAxisAlignment:
-                    MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.chat_bubble_outline,
-                    size: 70,
-                  ),
-
-                  SizedBox(height: 15),
-
-                  Text(
-                    'No chats yet.',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight:
-                          FontWeight.bold,
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(30),
+                child: Column(
+                  mainAxisAlignment:
+                      MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      height: 100,
+                      width: 100,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: 0.10),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.chat_bubble_outline,
+                        size: 50,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary,
+                      ),
                     ),
-                  ),
 
-                  SizedBox(height: 8),
+                    const SizedBox(height: 25),
 
-                  Text(
-                    'Accepted service requests will appear here.',
-                    textAlign: TextAlign.center,
-                  ),
-                ],
+                    const Text(
+                      'No chats yet',
+                      style: TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    Text(
+                      'Chats with users will appear here\n'
+                      'after a service request is accepted.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: Colors.grey.shade600,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
           }
 
-          // ===============================================
-          // DISPLAY CHATS
-          // ===============================================
+          // =============================================
+          // CHAT LIST
+          // =============================================
 
           return ListView.separated(
-            padding: const EdgeInsets.all(15),
+            padding: const EdgeInsets.fromLTRB(
+              16,
+              18,
+              16,
+              25,
+            ),
 
             itemCount: chats.length,
 
-            separatorBuilder:
-                (context, index) =>
-                    const SizedBox(
-              height: 10,
-            ),
+            separatorBuilder: (context, index) {
+              return const SizedBox(height: 12);
+            },
 
-            itemBuilder:
-                (context, index) {
+            itemBuilder: (context, index) {
               final chat = chats[index];
 
-              return Card(
-                elevation: 2,
+              return _buildChatCard(
+                context,
+                chat,
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
 
-                child: ListTile(
-                  contentPadding:
-                      const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
-                  ),
+  // =====================================================
+  // CHAT CARD
+  // =====================================================
 
-                  // =====================================
-                  // USER ICON
-                  // =====================================
+  Widget _buildChatCard(
+    BuildContext context,
+    ChatModel chat,
+  ) {
+    final primaryColor =
+        Theme.of(context).colorScheme.primary;
 
-                  leading: const CircleAvatar(
-                    radius: 28,
-                    child: Icon(
-                      Icons.person,
-                      size: 30,
-                    ),
-                  ),
+    return Material(
+      color: Colors.transparent,
 
-                  // =====================================
-                  // USER NAME
-                  // =====================================
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
 
-                  title: FutureBuilder<String>(
-                    future: _getUserName(
-                      chat.userId,
-                    ),
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ChatScreen(
+                chat: chat,
+              ),
+            ),
+          );
+        },
 
-                    builder:
-                        (context, snapshot) {
-                      if (snapshot.connectionState ==
-                          ConnectionState.waiting) {
-                        return const Text(
-                          'Loading...',
-                          style: TextStyle(
+        child: Container(
+          padding: const EdgeInsets.all(16),
+
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+
+            borderRadius:
+                BorderRadius.circular(18),
+
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black
+                    .withValues(alpha: 0.06),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+
+          child: Row(
+            children: [
+              // =========================================
+              // USER AVATAR
+              // =========================================
+
+              Container(
+                height: 58,
+                width: 58,
+
+                decoration: BoxDecoration(
+                  color: primaryColor
+                      .withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+
+                child: Icon(
+                  Icons.person,
+                  size: 30,
+                  color: primaryColor,
+                ),
+              ),
+
+              const SizedBox(width: 15),
+
+              // =========================================
+              // USER INFORMATION
+              // =========================================
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
+
+                  children: [
+                    // USER NAME
+
+                    FutureBuilder<String>(
+                      future: _getUserName(
+                        chat.userId,
+                      ),
+
+                      builder:
+                          (context, snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Text(
+                            'Loading...',
+                            style: TextStyle(
+                              fontSize: 17,
+                              fontWeight:
+                                  FontWeight.bold,
+                            ),
+                          );
+                        }
+
+                        return Text(
+                          snapshot.data ?? 'User',
+                          maxLines: 1,
+                          overflow:
+                              TextOverflow.ellipsis,
+                          style: const TextStyle(
                             fontSize: 17,
                             fontWeight:
                                 FontWeight.bold,
                           ),
                         );
-                      }
+                      },
+                    ),
 
-                      return Text(
-                        snapshot.data ?? 'User',
-                        style: const TextStyle(
-                          fontSize: 17,
-                          fontWeight:
-                              FontWeight.bold,
+                    const SizedBox(height: 6),
+
+                    // SERVICE REQUEST
+
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.assignment_outlined,
+                          size: 16,
+                          color:
+                              Colors.grey.shade600,
                         ),
+
+                        const SizedBox(width: 5),
+
+                        Expanded(
+                          child: Text(
+                            'Service Request: '
+                            '${chat.serviceRequestId}',
+                            maxLines: 1,
+                            overflow:
+                                TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color:
+                                  Colors.grey.shade600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 5),
+
+                    // CHAT LABEL
+
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.chat_bubble_outline,
+                          size: 15,
+                          color: primaryColor,
+                        ),
+
+                        const SizedBox(width: 5),
+
+                        Text(
+                          'Open conversation',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight:
+                                FontWeight.w500,
+                            color: primaryColor,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(width: 5),
+
+              // =========================================
+              // DELETE BUTTON + ARROW
+              // =========================================
+
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // DELETE BUTTON
+
+                  IconButton(
+                    onPressed: () {
+                      _confirmDelete(
+                        context,
+                        chat,
                       );
                     },
+
+                    tooltip: 'Delete chat',
+
+                    icon: const Icon(
+                      Icons.delete_outline,
+                      color: Colors.red,
+                      size: 24,
+                    ),
                   ),
 
-                  // =====================================
-                  // SERVICE REQUEST
-                  // =====================================
-
-                  subtitle: Text(
-                    'Service Request: ${chat.serviceRequestId}',
-                    maxLines: 1,
-                    overflow:
-                        TextOverflow.ellipsis,
-                  ),
-
-                  // =====================================
                   // ARROW
-                  // =====================================
 
-                  trailing: const Icon(
-                    Icons.arrow_forward_ios,
-                    size: 18,
+                  Container(
+                    height: 38,
+                    width: 38,
+
+                    decoration: BoxDecoration(
+                      color: primaryColor
+                          .withValues(alpha: 0.10),
+                      shape: BoxShape.circle,
+                    ),
+
+                    child: Icon(
+                      Icons.arrow_forward_ios,
+                      size: 15,
+                      color: primaryColor,
+                    ),
                   ),
-
-                  // =====================================
-                  // OPEN CHAT
-                  // =====================================
-
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            ChatScreen(
-                          chat: chat,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              );
-            },
-          );
-        },
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

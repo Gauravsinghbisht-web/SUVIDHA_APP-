@@ -7,15 +7,15 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:1080298939557:android:10c5fea12ba7a40a5f594c",
+        "mobilesdk_app_id": "1:1080298939557:android:07a4c2143fa6d8525f594c",
         "android_client_info": {
-          "package_name": "com.example.flutter_application_1"
+          "package_name": "suvidha.app"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDfQ5DXF49eXSUzTgbrVNFDQ-3Xvy0L8_s"
+          "current_key": "AIzaSyD8a8pMiUknlDcLFm0YR_s-IY4hJ4-KmLU"
         }
       ],
       "services": {

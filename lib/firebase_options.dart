@@ -51,13 +51,12 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDfQ5DXF49eXSUzTgbrVNFDQ-3Xvy0L8_s',
-    appId: '1:1080298939557:android:10c5fea12ba7a40a5f594c',
+    apiKey: 'AIzaSyD8a8pMiUknlDcLFm0YR_s-IY4hJ4-KmLU',
+    appId: '1:1080298939557:android:07a4c2143fa6d8525f594c',
     messagingSenderId: '1080298939557',
     projectId: 'suvidha2-35327',
     storageBucket: 'suvidha2-35327.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyC3lUhPPi6gBLcN957hic_vyBzM00kiG6o',
     appId: '1:1080298939557:ios:6a799054ad61c3225f594c',
@@ -66,7 +65,6 @@ class DefaultFirebaseOptions {
     storageBucket: 'suvidha2-35327.firebasestorage.app',
     iosBundleId: 'com.example.flutterApplication1',
   );
-
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyC3lUhPPi6gBLcN957hic_vyBzM00kiG6o',
     appId: '1:1080298939557:ios:6a799054ad61c3225f594c',

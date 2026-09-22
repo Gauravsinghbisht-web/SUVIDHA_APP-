@@ -9,8 +9,8 @@ class ServiceRequestModel {
   final String serviceType;
   final String status;
   final DateTime createdAt;
-  
-  // it is for bookings
+
+  // Booking fields
   final DateTime? bookingDate;
   final String? bookingTime;
   final String? address;
@@ -24,18 +24,16 @@ class ServiceRequestModel {
     required this.serviceType,
     required this.status,
     required this.createdAt,
-
-    //it is for bookings
     this.bookingDate,
     this.bookingTime,
     this.address,
     this.problemDescription,
-    
   });
 
   // =====================================================
   // FROM FIRESTORE
   // =====================================================
+
   factory ServiceRequestModel.fromMap(
     String id,
     Map<String, dynamic> map,
@@ -47,18 +45,25 @@ class ServiceRequestModel {
       serviceId: map['serviceId'] ?? '',
       serviceType: map['serviceType'] ?? '',
       status: map['status'] ?? 'pending',
-      createdAt: (map['createdAt'] as Timestamp?)?.toDate() ??
-          DateTime.now(),
-      bookingDate: (map['bookingDate'] as Timestamp?)?.toDate(),
-      bookingTime: map['bookingTime'] ?? null,
-      address: map['address'] ?? null,
-      problemDescription: map['problemDescription'] ?? null,
+
+      createdAt: map['createdAt'] is Timestamp
+          ? (map['createdAt'] as Timestamp).toDate()
+          : DateTime.now(),
+
+      bookingDate: map['bookingDate'] is Timestamp
+          ? (map['bookingDate'] as Timestamp).toDate()
+          : null,
+
+      bookingTime: map['bookingTime'] as String?,
+      address: map['address'] as String?,
+      problemDescription: map['problemDescription'] as String?,
     );
   }
 
   // =====================================================
   // TO FIRESTORE
   // =====================================================
+
   Map<String, dynamic> toMap() {
     return {
       'userId': userId,
@@ -67,17 +72,22 @@ class ServiceRequestModel {
       'serviceType': serviceType,
       'status': status,
       'createdAt': Timestamp.fromDate(createdAt),
-      'bookingDate':bookingDate != null? Timestamp.fromDate(bookingDate!) : null,
-      'bookingTime' : bookingTime,
-      'address' : address,
-      'problemDescription' : problemDescription,
 
+      // Booking fields
+      'bookingDate': bookingDate != null
+          ? Timestamp.fromDate(bookingDate!)
+          : null,
+
+      'bookingTime': bookingTime,
+      'address': address,
+      'problemDescription': problemDescription,
     };
   }
 
   // =====================================================
   // COPY WITH
   // =====================================================
+
   ServiceRequestModel copyWith({
     String? id,
     String? userId,
@@ -99,12 +109,12 @@ class ServiceRequestModel {
       serviceType: serviceType ?? this.serviceType,
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
-      bookingDate : bookingDate ?? this.bookingDate,
-      bookingTime : bookingTime ?? this.bookingTime,
-      address : address ?? this.address,
-      problemDescription : problemDescription ?? this.problemDescription,
 
+      bookingDate: bookingDate ?? this.bookingDate,
+      bookingTime: bookingTime ?? this.bookingTime,
+      address: address ?? this.address,
+      problemDescription:
+          problemDescription ?? this.problemDescription,
     );
   }
 }
-

@@ -1,38 +1,52 @@
 
-
 import 'package:firebase_app_check/firebase_app_check.dart';
-import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'viewmodels/auth_viewmodel.dart';
 import 'providers/service_provider.dart';
 import 'providers/service_request_provider.dart';
 import 'views/role_selection/role_selection_screen.dart';
-import 'screens/gemini_test_screen.dart';
 import 'theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase
+  // =====================================================
+  // FIREBASE INITIALIZATION
+  // =====================================================
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // Initialize Firebase App Check
-debugPrint('Starting Firebase App Check...');
+  debugPrint('Firebase initialized successfully.');
 
-  await FirebaseAppCheck.instance.activate(
-  androidProvider: AndroidProvider.debug,
-  appleProvider: AppleProvider.debug,
-);
-
+  // =====================================================
+  // START APP FIRST
+  // =====================================================
   runApp(
     const SuvidhaApp(),
-  ); 
+  );
+
+  // =====================================================
+  // FIREBASE APP CHECK
+  // =====================================================
+  try {
+    await FirebaseAppCheck.instance.activate(
+      androidProvider: AndroidProvider.debug,
+      appleProvider: AppleProvider.debug,
+    );
+
+    debugPrint('Firebase App Check activated successfully.');
+  } catch (e) {
+    debugPrint('Firebase App Check error: $e');
+  }
 }
 
+// =======================================================
+// SUVIDHA APP
+// =======================================================
 class SuvidhaApp extends StatelessWidget {
   const SuvidhaApp({
     super.key,
@@ -42,24 +56,20 @@ class SuvidhaApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-
         ChangeNotifierProvider(
-          create: (_) => AuthViewModel(),  // it is for Authentication 
+          create: (_) => AuthViewModel(),
         ),
-
         ChangeNotifierProvider(
-          create: (_) => ServiceProvider(),  // it is for Service
+          create: (_) => ServiceProvider(),
         ),
-
         ChangeNotifierProvider(
-          create: (_) => ServiceRequestProvider(),  // it is for Service Request 
+          create: (_) => ServiceRequestProvider(),
         ),
       ],
-
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'Suvidha',
-        theme : AppTheme.lightTheme,
+        theme: AppTheme.lightTheme,
         home: const RoleSelectionScreen(),
       ),
     );
