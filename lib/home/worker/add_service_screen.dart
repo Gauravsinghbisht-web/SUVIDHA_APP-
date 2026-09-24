@@ -114,9 +114,9 @@ class _AddServiceScreenState
       await FirebaseFirestore.instance
           .collection('services')
           .add({
-
         'workerId': currentUser.uid,
         'serviceType': selectedService,
+         'serviceTypeSearch' : selectedService!.trim().toLowerCase(),
         'experience': experienceController.text.trim(),
         'price': priceController.text.trim(),
         'location': locationController.text.trim(),

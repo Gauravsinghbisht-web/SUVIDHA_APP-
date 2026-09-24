@@ -202,24 +202,11 @@ class _WorkerRequestDetailsScreenState
   // FORMAT DATE
   // =====================================================
 
-  String _formatDate(DateTime date) {
-    final day =
-        date.day.toString().padLeft(2, '0');
-
-    final month =
-        date.month.toString().padLeft(2, '0');
-
-    final year =
-        date.year.toString();
-
-    final hour =
-        date.hour.toString().padLeft(2, '0');
-
-    final minute =
-        date.minute.toString().padLeft(2, '0');
-
-    return '$day/$month/$year $hour:$minute';
-  }
+ String _formatDate(DateTime date) {
+  return '${date.day.toString().padLeft(2, '0')}/'
+      '${date.month.toString().padLeft(2, '0')}/'
+      '${date.year}';
+}
 
   // =====================================================
   // BUILD
@@ -318,18 +305,25 @@ class _WorkerRequestDetailsScreenState
             const SizedBox(height: 15),
 
             // =============================================
-            // REQUESTED DATE
+            // BOOKING DATE 
             // =============================================
 
             _detailCard(
-              title: 'Requested On',
-              value: _formatDate(
-                request.createdAt,
-              ),
+              title: 'Booking Date',
+              value: request.bookingDate != null
+              ? _formatDate(request.bookingDate!)
+              : 'Not Provided',
               icon: Icons.access_time,
             ),
 
             const SizedBox(height: 30),
+
+            // BOOKING TIME
+
+            _detailCard(title: "Booking Time", 
+             value: request.bookingTime ?? 'Not Provided', 
+             icon: Icons.access_time,
+             ),        
 
             // =============================================
             // PENDING ACTION BUTTONS

@@ -1,3 +1,5 @@
+
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/service_model.dart';
 
@@ -44,7 +46,7 @@ class ServiceService {
     String serviceType,
   ) {
     final String searchText =
-        serviceType.trim();
+        serviceType.trim().toLowerCase();
 
     if (searchText.isEmpty) {
       return Stream.value([]);
@@ -53,7 +55,7 @@ class ServiceService {
     return _firestore
         .collection('services')
         .where(
-          'serviceType',
+          'serviceTypeSearch',
           isEqualTo: searchText,
         )
         .snapshots()
@@ -64,8 +66,7 @@ class ServiceService {
       );
 
       return snapshot.docs.map((doc) {
-        final data =
-            doc.data();
+        final data = doc.data();
 
         return ServiceModel.fromMap(
           doc.id,
@@ -84,7 +85,7 @@ class ServiceService {
   ) async {
     try {
       final String searchText =
-          serviceType.trim();
+          serviceType.trim().toLowerCase();
 
       print(
         'Searching service: "$searchText"',
@@ -98,7 +99,7 @@ class ServiceService {
           await _firestore
               .collection('services')
               .where(
-                'serviceType',
+                'serviceTypeSearch',
                 isEqualTo: searchText,
               )
               .get();

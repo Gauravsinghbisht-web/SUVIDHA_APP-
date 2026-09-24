@@ -3,7 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screens/user/user/worker_profile_screen.dart';
-import 'package:flutter_application_1/screens/profile/edit_worker_profile_screen.dart' hide EditWorkerProfileScreen;
+import 'package:flutter_application_1/home/worker/add_service_screen.dart';
 
 class WorkerProfileScreen extends StatefulWidget {
   final String? workerId;
@@ -220,7 +220,7 @@ class _WorkerProfileScreenState
       context,
       MaterialPageRoute(
         builder: (context) =>
-            const EditWorkerProfileScreen(),
+            const AddServiceScreen(),
       ),
     );
 
@@ -376,7 +376,7 @@ class _WorkerProfileScreenState
 
                         label:
                             const Text(
-                          'Edit Profile',
+                          'Change Service ',
                           style:
                               TextStyle(
                             fontSize: 16,

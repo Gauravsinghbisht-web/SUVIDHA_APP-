@@ -2,9 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/models/user_role.dart';
 import 'package:flutter_application_1/services/auth_service.dart';
-import 'package:provider/provider.dart';
-import 'package:flutter_application_1/models/user_role.dart';
-import 'package:flutter_application_1/services/auth_service.dart';
 
 class SignupScreen extends StatefulWidget {
   final UserRole role;

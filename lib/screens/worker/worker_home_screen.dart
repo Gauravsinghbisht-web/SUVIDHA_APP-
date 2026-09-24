@@ -19,23 +19,30 @@ class WorkerHomeScreen extends StatefulWidget {
   });
 
   @override
-  State<WorkerHomeScreen> createState() => _WorkerHomeScreenState();
+  State<WorkerHomeScreen> createState() =>
+      _WorkerHomeScreenState();
 }
 
-class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
+class _WorkerHomeScreenState
+    extends State<WorkerHomeScreen> {
+
   // =====================================================
   // LOCATION SERVICE
   // =====================================================
-  final LocationService _locationService = LocationService();
+
+  final LocationService _locationService =
+      LocationService();
 
   // =====================================================
   // CURRENT TAB
   // =====================================================
+
   int _currentIndex = 0;
 
   // =====================================================
   // INIT STATE
   // =====================================================
+
   @override
   void initState() {
     super.initState();
@@ -47,9 +54,11 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
   // =====================================================
   // SAVE WORKER LOCATION TO FIRESTORE
   // =====================================================
+
   Future<void> _saveWorkerLocation() async {
     // Get currently logged-in Firebase user
-    final User? user = FirebaseAuth.instance.currentUser;
+    final User? user =
+        FirebaseAuth.instance.currentUser;
 
     // Check whether worker is logged in
     if (user == null) {
@@ -59,7 +68,8 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
 
     try {
       // Get current GPS location
-      final position = await _locationService.getCurrentLocation();
+      final position =
+          await _locationService.getCurrentLocation();
 
       // Check whether location was obtained
       if (position == null) {
@@ -85,19 +95,101 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
   }
 
   // =====================================================
+  // CHECK PENDING REQUESTS
+  // =====================================================
+
+  Stream<bool> _hasPendingRequests() {
+    final User? user =
+        FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      return Stream.value(false);
+    }
+
+    return FirebaseFirestore.instance
+        .collection('service_requests')
+        .where(
+          'workerId',
+          isEqualTo: user.uid,
+        )
+        .where(
+          'status',
+          isEqualTo: 'pending',
+        )
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs.isNotEmpty,
+        );
+  }
+
+  // =====================================================
+  // REQUEST ICON WITH RED NOTIFICATION DOT
+  // =====================================================
+
+  Widget _requestIconWithNotification({
+    required bool active,
+  }) {
+    return StreamBuilder<bool>(
+      stream: _hasPendingRequests(),
+
+      builder: (
+        context,
+        snapshot,
+      ) {
+        final bool hasPending =
+            snapshot.data ?? false;
+
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Icon(
+              active
+                  ? Icons.assignment
+                  : Icons.assignment_outlined,
+            ),
+
+            if (hasPending)
+              Positioned(
+                right: -3,
+                top: -3,
+                child: Container(
+                  width: 9,
+                  height: 9,
+
+                  decoration:
+                      const BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  // =====================================================
   // HOME SCREEN
   // =====================================================
+
   Widget _homeScreen() {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
+
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment:
+            CrossAxisAlignment.start,
+
         children: [
+
           // =============================================
           // WELCOME
           // =============================================
+
           Text(
             'Hello, ${widget.name} 👋',
+
             style: const TextStyle(
               fontSize: 26,
               fontWeight: FontWeight.bold,
@@ -108,6 +200,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
 
           Text(
             'Manage your services and requests.',
+
             style: TextStyle(
               fontSize: 16,
               color: Colors.grey.shade600,
@@ -119,12 +212,15 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
           // =============================================
           // AVAILABILITY
           // =============================================
+
           const WorkerAvailabilityCard(),
 
           const SizedBox(height: 25),
+
           // =============================================
           // OVERVIEW
           // =============================================
+
           const WorkerOverview(),
 
           const SizedBox(height: 30),
@@ -132,6 +228,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
           // =============================================
           // ACTIONS
           // =============================================
+
           const WorkerActions(),
         ],
       ),
@@ -141,8 +238,10 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
   // =====================================================
   // SCREEN LIST
   // =====================================================
+
   List<Widget> get _screens {
     return [
+
       // 0 - HOME
       _homeScreen(),
 
@@ -160,23 +259,30 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
   // =====================================================
   // BUILD
   // =====================================================
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+
       // =================================================
       // APP BAR
       // =================================================
+
       appBar: AppBar(
         title: const Text(
           'Suvidha',
         ),
+
         centerTitle: true,
+
         automaticallyImplyLeading: false,
+
         actions: [
           IconButton(
             onPressed: () {
               // Profile action can be added later.
             },
+
             icon: const Icon(
               Icons.person_outline,
             ),
@@ -187,6 +293,7 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
       // =================================================
       // BODY
       // =================================================
+
       body: IndexedStack(
         index: _currentIndex,
         children: _screens,
@@ -195,8 +302,11 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
       // =================================================
       // BOTTOM NAVIGATION
       // =================================================
-      bottomNavigationBar: BottomNavigationBar(
+
+      bottomNavigationBar:
+          BottomNavigationBar(
         currentIndex: _currentIndex,
+
         onTap: (index) {
           setState(() {
             _currentIndex = index;
@@ -206,9 +316,16 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
         // ===============================================
         // NAVIGATION COLORS
         // ===============================================
-        backgroundColor: const Color(0xFF1565C0),
-        selectedItemColor: Colors.white,
-        unselectedItemColor: Colors.white70,
+
+        backgroundColor:
+            const Color(0xFF1565C0),
+
+        selectedItemColor:
+            Colors.white,
+
+        unselectedItemColor:
+            Colors.white70,
+
         // Keep all 4 items visible
         type: BottomNavigationBarType.fixed,
 
@@ -216,56 +333,70 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
         // ITEMS
         // ===============================================
 
-        items: const [
+        items: [
+
           // =============================================
           // HOME
           // =============================================
-          BottomNavigationBarItem(
+
+          const BottomNavigationBarItem(
             icon: Icon(
               Icons.home_outlined,
             ),
+
             activeIcon: Icon(
               Icons.home,
             ),
+
             label: 'Home',
           ),
 
           // =============================================
           // REQUESTS
           // =============================================
+
           BottomNavigationBarItem(
-            icon: Icon(
-              Icons.assignment_outlined,
+            icon: _requestIconWithNotification(
+              active: false,
             ),
-            activeIcon: Icon(
-              Icons.assignment,
+
+            activeIcon:
+                _requestIconWithNotification(
+              active: true,
             ),
+
             label: 'Requests',
           ),
 
           // =============================================
           // CHATS
-          // ============================================
-          BottomNavigationBarItem(
+          // =============================================
+
+          const BottomNavigationBarItem(
             icon: Icon(
               Icons.chat_bubble_outline,
             ),
+
             activeIcon: Icon(
               Icons.chat_bubble,
             ),
+
             label: 'Chats',
           ),
 
           // =============================================
           // PROFILE
           // =============================================
-          BottomNavigationBarItem(
+
+          const BottomNavigationBarItem(
             icon: Icon(
               Icons.person_outline,
             ),
+
             activeIcon: Icon(
               Icons.person,
             ),
+
             label: 'Profile',
           ),
         ],
