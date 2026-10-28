@@ -1,22 +1,25 @@
 
+
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+
 import '../../models/chat_model.dart';
 import '../../services/chat_service.dart';
 import '../chat/chat_screen.dart';
 
 class WorkerChatScreen extends StatelessWidget {
+  final VoidCallback onBackToHome;
+
   WorkerChatScreen({
     super.key,
+    required this.onBackToHome,
   });
 
   final ChatService _chatService = ChatService();
 
-  // =====================================================
   // GET USER NAME
-  // =====================================================
-
   Future<String> _getUserName(String userId) async {
     final doc = await FirebaseFirestore.instance
         .collection('users')
@@ -25,17 +28,13 @@ class WorkerChatScreen extends StatelessWidget {
 
     if (doc.exists) {
       final data = doc.data();
-
       return data?['name'] ?? 'User';
     }
 
     return 'User';
   }
 
-  // =====================================================
   // DELETE CHAT CONFIRMATION
-  // =====================================================
-
   Future<void> _confirmDelete(
     BuildContext context,
     ChatModel chat,
@@ -55,24 +54,15 @@ class WorkerChatScreen extends StatelessWidget {
             'All messages in this conversation will be deleted.',
           ),
           actions: [
-            // CANCEL
             TextButton(
               onPressed: () {
-                Navigator.pop(
-                  dialogContext,
-                  false,
-                );
+                Navigator.pop(dialogContext, false);
               },
               child: const Text('Cancel'),
             ),
-
-            // DELETE
             TextButton(
               onPressed: () {
-                Navigator.pop(
-                  dialogContext,
-                  true,
-                );
+                Navigator.pop(dialogContext, true);
               },
               child: const Text(
                 'Delete',
@@ -87,29 +77,17 @@ class WorkerChatScreen extends StatelessWidget {
       },
     );
 
-    // ===================================================
-    // USER CANCELLED
-    // ===================================================
-
     if (shouldDelete != true) {
       return;
     }
 
-    // ===================================================
-    // DELETE CHAT
-    // ===================================================
-
     try {
-      await _chatService.deleteChat(
-        chat.id,
-      );
+      await _chatService.deleteChat(chat.id);
 
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(
-              'Chat deleted successfully.',
-            ),
+            content: Text('Chat deleted successfully.'),
           ),
         );
       }
@@ -117,9 +95,7 @@ class WorkerChatScreen extends StatelessWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'Failed to delete chat: $e',
-            ),
+            content: Text('Failed to delete chat: $e'),
           ),
         );
       }
@@ -131,31 +107,27 @@ class WorkerChatScreen extends StatelessWidget {
     final User? currentUser =
         FirebaseAuth.instance.currentUser;
 
-    // ===================================================
-    // WORKER NOT LOGGED IN
-    // ===================================================
-
     if (currentUser == null) {
       return const Scaffold(
         body: Center(
-          child: Text(
-            'Worker is not logged in.',
-          ),
+          child: Text('Worker is not logged in.'),
         ),
       );
     }
 
     return Scaffold(
-      backgroundColor:
-          Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
 
-      // =================================================
       // APP BAR
-      // =================================================
-
       appBar: AppBar(
         elevation: 0,
         centerTitle: true,
+        automaticallyImplyLeading: false,
+        leading: IconButton(
+          tooltip: 'Back to Home',
+          icon: const Icon(Icons.arrow_back),
+          onPressed: onBackToHome,
+        ),
         title: const Text(
           'Chats',
           style: TextStyle(
@@ -165,20 +137,10 @@ class WorkerChatScreen extends StatelessWidget {
         ),
       ),
 
-      // =================================================
       // CHAT LIST
-      // =================================================
-
       body: StreamBuilder<List<ChatModel>>(
-        stream: _chatService.getWorkerChats(
-          currentUser.uid,
-        ),
-
+        stream: _chatService.getWorkerChats(currentUser.uid),
         builder: (context, snapshot) {
-          // =============================================
-          // LOADING
-          // =============================================
-
           if (snapshot.connectionState ==
               ConnectionState.waiting) {
             return const Center(
@@ -186,25 +148,18 @@ class WorkerChatScreen extends StatelessWidget {
             );
           }
 
-          // =============================================
-          // ERROR
-          // =============================================
-
           if (snapshot.hasError) {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(25),
                 child: Column(
-                  mainAxisAlignment:
-                      MainAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Icon(
                       Icons.error_outline,
                       size: 60,
                     ),
-
                     const SizedBox(height: 15),
-
                     const Text(
                       'Unable to load chats',
                       style: TextStyle(
@@ -212,9 +167,7 @@ class WorkerChatScreen extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-
                     const SizedBox(height: 8),
-
                     Text(
                       '${snapshot.error}',
                       textAlign: TextAlign.center,
@@ -227,17 +180,12 @@ class WorkerChatScreen extends StatelessWidget {
 
           final chats = snapshot.data ?? [];
 
-          // =============================================
-          // NO CHATS
-          // =============================================
-
           if (chats.isEmpty) {
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(30),
                 child: Column(
-                  mainAxisAlignment:
-                      MainAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
                       height: 100,
@@ -252,14 +200,10 @@ class WorkerChatScreen extends StatelessWidget {
                       child: Icon(
                         Icons.chat_bubble_outline,
                         size: 50,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .primary,
+                        color: Theme.of(context).colorScheme.primary,
                       ),
                     ),
-
                     const SizedBox(height: 25),
-
                     const Text(
                       'No chats yet',
                       style: TextStyle(
@@ -267,9 +211,7 @@ class WorkerChatScreen extends StatelessWidget {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-
                     const SizedBox(height: 10),
-
                     Text(
                       'Chats with users will appear here\n'
                       'after a service request is accepted.',
@@ -286,31 +228,14 @@ class WorkerChatScreen extends StatelessWidget {
             );
           }
 
-          // =============================================
-          // CHAT LIST
-          // =============================================
-
           return ListView.separated(
-            padding: const EdgeInsets.fromLTRB(
-              16,
-              18,
-              16,
-              25,
-            ),
-
+            padding: const EdgeInsets.fromLTRB(16, 18, 16, 25),
             itemCount: chats.length,
-
             separatorBuilder: (context, index) {
               return const SizedBox(height: 12);
             },
-
             itemBuilder: (context, index) {
-              final chat = chats[index];
-
-              return _buildChatCard(
-                context,
-                chat,
-              );
+              return _buildChatCard(context, chats[index]);
             },
           );
         },
@@ -318,69 +243,48 @@ class WorkerChatScreen extends StatelessWidget {
     );
   }
 
-  // =====================================================
   // CHAT CARD
-  // =====================================================
-
   Widget _buildChatCard(
     BuildContext context,
     ChatModel chat,
   ) {
-    final primaryColor =
-        Theme.of(context).colorScheme.primary;
+    final primaryColor = Theme.of(context).colorScheme.primary;
 
     return Material(
       color: Colors.transparent,
-
       child: InkWell(
         borderRadius: BorderRadius.circular(18),
-
         onTap: () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => ChatScreen(
-                chat: chat,
-              ),
+              builder: (_) => ChatScreen(chat: chat),
             ),
           );
         },
-
         child: Container(
           padding: const EdgeInsets.all(16),
-
           decoration: BoxDecoration(
             color: Theme.of(context).cardColor,
-
-            borderRadius:
-                BorderRadius.circular(18),
-
+            borderRadius: BorderRadius.circular(18),
             boxShadow: [
               BoxShadow(
-                color: Colors.black
-                    .withValues(alpha: 0.06),
+                color: Colors.black.withValues(alpha: 0.06),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
             ],
           ),
-
           child: Row(
             children: [
-              // =========================================
               // USER AVATAR
-              // =========================================
-
               Container(
                 height: 58,
                 width: 58,
-
                 decoration: BoxDecoration(
-                  color: primaryColor
-                      .withValues(alpha: 0.12),
+                  color: primaryColor.withValues(alpha: 0.12),
                   shape: BoxShape.circle,
                 ),
-
                 child: Icon(
                   Icons.person,
                   size: 30,
@@ -390,33 +294,21 @@ class WorkerChatScreen extends StatelessWidget {
 
               const SizedBox(width: 15),
 
-              // =========================================
               // USER INFORMATION
-              // =========================================
-
               Expanded(
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
-
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // USER NAME
-
                     FutureBuilder<String>(
-                      future: _getUserName(
-                        chat.userId,
-                      ),
-
-                      builder:
-                          (context, snapshot) {
+                      future: _getUserName(chat.userId),
+                      builder: (context, snapshot) {
                         if (snapshot.connectionState ==
                             ConnectionState.waiting) {
                           return const Text(
                             'Loading...',
                             style: TextStyle(
                               fontSize: 17,
-                              fontWeight:
-                                  FontWeight.bold,
+                              fontWeight: FontWeight.bold,
                             ),
                           );
                         }
@@ -424,12 +316,10 @@ class WorkerChatScreen extends StatelessWidget {
                         return Text(
                           snapshot.data ?? 'User',
                           maxLines: 1,
-                          overflow:
-                              TextOverflow.ellipsis,
+                          overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
                             fontSize: 17,
-                            fontWeight:
-                                FontWeight.bold,
+                            fontWeight: FontWeight.bold,
                           ),
                         );
                       },
@@ -437,30 +327,22 @@ class WorkerChatScreen extends StatelessWidget {
 
                     const SizedBox(height: 6),
 
-                    // SERVICE REQUEST
-
                     Row(
                       children: [
                         Icon(
                           Icons.assignment_outlined,
                           size: 16,
-                          color:
-                              Colors.grey.shade600,
+                          color: Colors.grey.shade600,
                         ),
-
                         const SizedBox(width: 5),
-
                         Expanded(
                           child: Text(
-                            'Service Request: '
-                            '${chat.serviceRequestId}',
+                            'Service Request: ${chat.serviceRequestId}',
                             maxLines: 1,
-                            overflow:
-                                TextOverflow.ellipsis,
+                            overflow: TextOverflow.ellipsis,
                             style: TextStyle(
                               fontSize: 13,
-                              color:
-                                  Colors.grey.shade600,
+                              color: Colors.grey.shade600,
                             ),
                           ),
                         ),
@@ -469,8 +351,6 @@ class WorkerChatScreen extends StatelessWidget {
 
                     const SizedBox(height: 5),
 
-                    // CHAT LABEL
-
                     Row(
                       children: [
                         Icon(
@@ -478,15 +358,12 @@ class WorkerChatScreen extends StatelessWidget {
                           size: 15,
                           color: primaryColor,
                         ),
-
                         const SizedBox(width: 5),
-
                         Text(
                           'Open conversation',
                           style: TextStyle(
                             fontSize: 12,
-                            fontWeight:
-                                FontWeight.w500,
+                            fontWeight: FontWeight.w500,
                             color: primaryColor,
                           ),
                         ),
@@ -498,44 +375,28 @@ class WorkerChatScreen extends StatelessWidget {
 
               const SizedBox(width: 5),
 
-              // =========================================
-              // DELETE BUTTON + ARROW
-              // =========================================
-
+              // DELETE BUTTON AND ARROW
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // DELETE BUTTON
-
                   IconButton(
                     onPressed: () {
-                      _confirmDelete(
-                        context,
-                        chat,
-                      );
+                      _confirmDelete(context, chat);
                     },
-
                     tooltip: 'Delete chat',
-
                     icon: const Icon(
                       Icons.delete_outline,
                       color: Colors.red,
                       size: 24,
                     ),
                   ),
-
-                  // ARROW
-
                   Container(
                     height: 38,
                     width: 38,
-
                     decoration: BoxDecoration(
-                      color: primaryColor
-                          .withValues(alpha: 0.10),
+                      color: primaryColor.withValues(alpha: 0.10),
                       shape: BoxShape.circle,
                     ),
-
                     child: Icon(
                       Icons.arrow_forward_ios,
                       size: 15,

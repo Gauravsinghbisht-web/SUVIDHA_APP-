@@ -1,8 +1,9 @@
+
 import 'package:firebase_ai/firebase_ai.dart';
 
 class GeminiService {
   final GenerativeModel _model = FirebaseAI.googleAI().generativeModel(
-    model: 'gemini-3.6-flash',
+    model: 'gemini-3.5-flash-lite',
   );
 
   Future<String> askGemini(String question) async {
@@ -14,7 +15,7 @@ Suvidha helps users find and book workers such as:
 - Plumbers
 - Electricians
 - Carpenters
-- Cleaners
+- Cleaners 
 
 Your responsibilities:
 1. Understand the user's home-service problem.

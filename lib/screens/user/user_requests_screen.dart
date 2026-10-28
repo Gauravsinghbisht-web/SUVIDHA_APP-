@@ -9,8 +9,10 @@ import '../../services/chat_service.dart';
 import '../chat/chat_screen.dart';
 
 class UserRequestsScreen extends StatefulWidget {
+  final VoidCallback? onBackToHome;
   const UserRequestsScreen({
     super.key,
+    this.onBackToHome,
   });
 
   @override
@@ -230,11 +232,22 @@ class _UserRequestsScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'My Requests',
-        ),
-        centerTitle: true,
-      ),
+  title: const Text('My Requests'),
+  centerTitle: true,
+  automaticallyImplyLeading: false,
+  leading: IconButton(
+    icon: const Icon(Icons.arrow_back),
+    onPressed: () { 
+      if (widget.onBackToHome != null) {
+        widget.onBackToHome!();
+      } else {
+        Navigator.of(context).popUntil(
+          (route) => route.isFirst,
+        );
+      }
+    },
+  ),
+),
 
       body: Consumer<ServiceRequestProvider>(
         builder: (
@@ -260,7 +273,7 @@ class _UserRequestsScreenState
             return Center(
               child: Column(
                 mainAxisAlignment:
-                    MainAxisAlignment.center,
+                MainAxisAlignment.center,
                 children: [
                   const Icon(
                     Icons.error_outline,
@@ -295,8 +308,7 @@ class _UserRequestsScreenState
             return RefreshIndicator(
               onRefresh: _loadRequests,
               child: ListView(
-                physics:
-                    const AlwaysScrollableScrollPhysics(),
+                physics: const AlwaysScrollableScrollPhysics(),
                 children: const [
                   SizedBox(height: 150),
 
@@ -530,14 +542,12 @@ class _UserRequestsScreenState
                     const SizedBox(width: 10),
 
                     Expanded(
-                      child: Text(
-                        'Worker assigned\n'
+                      child: Text('Worker assigned\n'
                         '${request.workerId}',
 
                         style:
                             const TextStyle(
-                          fontWeight:
-                              FontWeight.w500,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                     ),
@@ -549,20 +559,12 @@ class _UserRequestsScreenState
             // PENDING MESSAGE
             // =========================================
 
-            if (request.status ==
-                'pending')
+            if (request.status == 'pending')
               Container(
-                width:
-                    double.infinity,
-
-                padding:
-                    const EdgeInsets.all(12),
-
-                decoration:
-                    BoxDecoration(
-                  borderRadius:
-                      BorderRadius.circular(10),
-
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
                   color: Colors.orange
                       .withOpacity(0.08),
                 ),
@@ -571,12 +573,10 @@ class _UserRequestsScreenState
                   children: [
                     Icon(
                       Icons.hourglass_empty,
-                      color:
-                          Colors.orange,
+                      color:Colors.orange,
                     ),
 
                     SizedBox(width: 10),
-
                     Expanded(
                       child: Text(
                         'Waiting for a worker to accept your request.',
@@ -614,8 +614,7 @@ class _UserRequestsScreenState
                         ? const SizedBox(
                             width: 18,
                             height: 18,
-                            child:
-                                CircularProgressIndicator(
+                            child: CircularProgressIndicator(
                               strokeWidth: 2,
                             ),
                           )

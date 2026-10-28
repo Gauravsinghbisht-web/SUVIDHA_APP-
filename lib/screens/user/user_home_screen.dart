@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application_1/screens/user/user/service_results_screen.dart';
 import 'package:flutter_application_1/screens/user/user_chat_screen.dart';
 import 'package:flutter_application_1/screens/user/user_profile_screen.dart';
@@ -7,6 +8,7 @@ import 'package:flutter_application_1/screens/user/user_requests_screen.dart';
 import 'package:flutter_application_1/views/search/service_search_bar.dart';
 import 'package:flutter_application_1/screens/map/google_map_screen.dart';
 import 'package:flutter_application_1/screens/ai_assistant_screen.dart';
+import 'package:flutter_application_1/widgets/notification_dot.dart';
 
 class UserHomeScreen extends StatefulWidget {
   final String name;
@@ -21,18 +23,29 @@ class UserHomeScreen extends StatefulWidget {
 }
 
 class _UserHomeScreenState extends State<UserHomeScreen> {
-  // =====================================================
-  // VARIABLES
-  // =====================================================
-
+  // CURRENT TAB
   int _currentIndex = 0;
 
+  // SEARCH CONTROLLER
   final TextEditingController searchController =
       TextEditingController();
 
-  // =====================================================
-  // DISPOSE
-  // =====================================================
+  // NAVIGATION ICON WITH UNREAD CHAT DOT
+  Widget _navIcon(
+    IconData icon, {
+    bool unread = false,
+  }) {
+    final User? user = FirebaseAuth.instance.currentUser;
+
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        Icon(icon),
+        if (unread && user != null)
+          UnreadChatDot(userId: user.uid),
+      ],
+    );
+  }
 
   @override
   void dispose() {
@@ -40,10 +53,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     super.dispose();
   }
 
-  // =====================================================
   // SEARCH SERVICE
-  // =====================================================
-
   void searchService(String value) {
     final String serviceType = value.trim();
 
@@ -53,7 +63,6 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           content: Text('Please enter a service name.'),
         ),
       );
-
       return;
     }
 
@@ -67,10 +76,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     );
   }
 
-  // =====================================================
   // OPEN AI ASSISTANT
-  // =====================================================
-
   void openAiAssistant() {
     Navigator.push(
       context,
@@ -80,10 +86,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     );
   }
 
-  // =====================================================
   // OPEN MAP
-  // =====================================================
-
   void openMap() {
     Navigator.push(
       context,
@@ -93,10 +96,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     );
   }
 
-  // =====================================================
   // HOME SCREEN
-  // =====================================================
-
   Widget _homeScreen() {
     return SafeArea(
       child: SingleChildScrollView(
@@ -105,10 +105,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // =================================================
             // WELCOME SECTION
-            // =================================================
-
             Row(
               children: [
                 Expanded(
@@ -123,14 +120,11 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                             .textTheme
                             .headlineMedium,
                       ),
-
                       const SizedBox(height: 6),
-
                       Text(
                         'What service do you need today?',
-                        style: Theme.of(context)
-                            .textTheme
-                            .bodyMedium,
+                        style:
+                            Theme.of(context).textTheme.bodyMedium,
                       ),
                     ],
                   ),
@@ -140,7 +134,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                 Container(
                   height: 46,
                   width: 46,
-                  decoration: BoxDecoration(
+                  decoration: BoxDecoration( 
                     color: Theme.of(context)
                         .colorScheme
                         .primary
@@ -149,9 +143,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                   ),
                   child: Icon(
                     Icons.location_on_outlined,
-                    color: Theme.of(context)
-                        .colorScheme
-                        .primary,
+                    color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
               ],
@@ -159,10 +151,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
 
             const SizedBox(height: 24),
 
-            // =================================================
             // SEARCH BAR
-            // =================================================
-
             ServiceSearchBar(
               controller: searchController,
               onChanged: (value) {},
@@ -171,29 +160,19 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
 
             const SizedBox(height: 20),
 
-            // =================================================
             // AI ASSISTANT CARD
-            // =================================================
-
             _buildAiCard(),
 
             const SizedBox(height: 28),
 
-            // =================================================
             // POPULAR SERVICES HEADER
-            // =================================================
-
             Row(
-              mainAxisAlignment:
-                  MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   'Popular Services',
-                  style: Theme.of(context)
-                      .textTheme
-                      .titleLarge,
+                  style: Theme.of(context).textTheme.titleLarge,
                 ),
-
                 TextButton(
                   onPressed: () {
                     searchController.clear();
@@ -213,10 +192,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
 
             const SizedBox(height: 15),
 
-            // =================================================
             // SERVICE GRID
-            // =================================================
-
             GridView.count(
               crossAxisCount: 2,
               shrinkWrap: true,
@@ -229,17 +205,14 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                   icon: Icons.plumbing,
                   title: 'Plumber',
                 ),
-
                 _serviceCard(
                   icon: Icons.electrical_services,
                   title: 'Electrician',
                 ),
-
                 _serviceCard(
                   icon: Icons.cleaning_services,
                   title: 'Cleaner',
                 ),
-
                 _serviceCard(
                   icon: Icons.handyman,
                   title: 'Carpenter',
@@ -249,30 +222,20 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
 
             const SizedBox(height: 25),
 
-            // =================================================
             // NEARBY WORKERS / MAP CARD
-            // =================================================
-
             _buildMapCard(),
 
             const SizedBox(height: 18),
 
-            // =================================================
             // FIND WORKER BUTTON
-            // =================================================
-
             SizedBox(
               width: double.infinity,
               height: 56,
               child: ElevatedButton.icon(
                 onPressed: () {
-                  searchService(
-                    searchController.text,
-                  );
+                  searchService(searchController.text);
                 },
-                icon: const Icon(
-                  Icons.search,
-                ),
+                icon: const Icon(Icons.search),
                 label: const Text(
                   'Find a Worker',
                   style: TextStyle(
@@ -288,13 +251,9 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     );
   }
 
-  // =====================================================
   // AI ASSISTANT CARD
-  // =====================================================
-
   Widget _buildAiCard() {
-    final primary =
-        Theme.of(context).colorScheme.primary;
+    final primary = Theme.of(context).colorScheme.primary;
 
     return Container(
       width: double.infinity,
@@ -339,8 +298,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
           // TEXT
           Expanded(
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
                   'Not sure what you need?',
@@ -350,15 +308,11 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
                 const SizedBox(height: 5),
-
                 Text(
                   'Describe your problem and let AI help you.',
                   style: TextStyle(
-                    color: Colors.white.withValues(
-                      alpha: 0.85,
-                    ),
+                    color: Colors.white.withValues(alpha: 0.85),
                     fontSize: 13,
                   ),
                 ),
@@ -375,19 +329,14 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
               backgroundColor: Colors.white,
               foregroundColor: primary,
             ),
-            icon: const Icon(
-              Icons.arrow_forward,
-            ),
+            icon: const Icon(Icons.arrow_forward),
           ),
         ],
       ),
     );
   }
 
-  // =====================================================
   // MAP CARD
-  // =====================================================
-
   Widget _buildMapCard() {
     return Container(
       width: double.infinity,
@@ -426,8 +375,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
 
           Expanded(
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
                   'Find workers near you',
@@ -436,9 +384,7 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-
                 const SizedBox(height: 4),
-
                 Text(
                   'View available workers on the map',
                   style: TextStyle(
@@ -462,44 +408,40 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     );
   }
 
-  // =====================================================
   // ALL USER SCREENS
-  // =====================================================
-
   List<Widget> get _screens {
-    return [
-      // INDEX 0: HOME
-      _homeScreen(),
-
-      // INDEX 1: REQUESTS
-      const UserRequestsScreen(),
-
-      // INDEX 2: CHATS
-      UserChatScreen(),
-
-      // INDEX 3: PROFILE
-      const UserProfileScreen(),
-    ];
-  }
-
-  // =====================================================
-  // BUILD
-  // =====================================================
+  return [
+    _homeScreen(),
+    UserRequestsScreen(
+      onBackToHome: () {
+        setState(() {
+          _currentIndex = 0;
+        });
+      },
+    ),
+    UserChatScreen(onBackToHome: () {  // it is for back arrow to home screen 
+      setState(() {
+        _currentIndex = 0;
+      });
+     },),
+    UserProfileScreen(
+      onBackToHome: () {
+        setState(() {
+          _currentIndex = 0;
+        });
+      },
+    ),
+  ];
+}
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // ===================================================
       // APP BAR
-      // ===================================================
-
       appBar: AppBar(
-        title: const Text(
-          'Suvidha',
-        ),
+        title: const Text('Suvidha'),
         centerTitle: true,
         automaticallyImplyLeading: false,
-
         actions: [
           IconButton(
             onPressed: () {
@@ -507,88 +449,59 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
                 _currentIndex = 3;
               });
             },
-            icon: const Icon(
-              Icons.person_outline,
-            ),
+            icon: const Icon(Icons.person_outline),
           ),
-
           const SizedBox(width: 8),
         ],
       ),
 
-      // ===================================================
       // BODY
-      // ===================================================
-
       body: IndexedStack(
         index: _currentIndex,
         children: _screens,
       ),
 
-      // ===================================================
       // BOTTOM NAVIGATION
-      // ===================================================
-
-      bottomNavigationBar:
-          BottomNavigationBar(
+      bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
-
         selectedItemColor:
-            Theme.of(context)
-                .colorScheme
-                .primary,
-
-        unselectedItemColor:
-            Colors.grey.shade500,
-
+            Theme.of(context).colorScheme.primary,
+        unselectedItemColor: Colors.grey.shade500,
         onTap: (index) {
           setState(() {
             _currentIndex = index;
           });
         },
 
-        items: const [
-          // HOME
-          BottomNavigationBarItem(
-            icon: Icon(
-              Icons.home_outlined,
-            ),
-            activeIcon: Icon(
-              Icons.home,
-            ),
+        // Not const because the Chats icon uses a live stream.
+        items: [
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.home_outlined),
+            activeIcon: Icon(Icons.home),
             label: 'Home',
           ),
 
-          // REQUESTS
-          BottomNavigationBarItem(
-            icon: Icon(
-              Icons.assignment_outlined,
-            ),
-            activeIcon: Icon(
-              Icons.assignment,
-            ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.assignment_outlined),
+            activeIcon: Icon(Icons.assignment),
             label: 'Requests',
           ),
 
-          // CHATS
           BottomNavigationBarItem(
-            icon: Icon(
+            icon: _navIcon(
               Icons.chat_outlined,
+              unread: true,
             ),
-            activeIcon: Icon(
+            activeIcon: _navIcon(
               Icons.chat,
+              unread: true,
             ),
             label: 'Chats',
           ),
 
-          // PROFILE
-          BottomNavigationBarItem(
-            icon: Icon(
-              Icons.person_outline,
-            ),
-            activeIcon: Icon(
-              Icons.person,
-            ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            activeIcon: Icon(Icons.person),
             label: 'Profile',
           ),
         ],
@@ -596,16 +509,12 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
     );
   }
 
-  // =====================================================
   // SERVICE CARD
-  // =====================================================
-
   Widget _serviceCard({
     required IconData icon,
     required String title,
   }) {
-    final primary =
-        Theme.of(context).colorScheme.primary;
+    final primary = Theme.of(context).colorScheme.primary;
 
     return Material(
       color: Colors.white,
@@ -624,28 +533,22 @@ class _UserHomeScreenState extends State<UserHomeScreen> {
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(
-                  alpha: 0.035,
-                ),
+                color: Colors.black.withValues(alpha: 0.035),
                 blurRadius: 8,
                 offset: const Offset(0, 3),
               ),
             ],
           ),
           child: Column(
-            mainAxisAlignment:
-                MainAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               // ICON
               Container(
                 height: 52,
                 width: 52,
                 decoration: BoxDecoration(
-                  color: primary.withValues(
-                    alpha: 0.10,
-                  ),
-                  borderRadius:
-                      BorderRadius.circular(16),
+                  color: primary.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: Icon(
                   icon,

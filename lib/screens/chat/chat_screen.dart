@@ -367,9 +367,7 @@ class _ChatScreenState extends State<ChatScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Chat',
-        ),
+        title: const Text('Chat'),
         centerTitle: true,
       ),
 
@@ -394,8 +392,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
                 if (snapshot.hasError) {
                   return Center(
-                    child: Text(
-                      'Unable to load messages.\n'
+                    child: Text('Unable to load messages.\n'
                       '${snapshot.error}',
                       textAlign:
                           TextAlign.center,

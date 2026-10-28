@@ -155,8 +155,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
 
           Align(
             alignment: Alignment.centerLeft,
-            child: Text(
-              'Try asking',
+            child: Text('Try asking',
               style: Theme.of(context)
                   .textTheme
                   .titleMedium,

@@ -1,4 +1,5 @@
 
+
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
@@ -9,48 +10,45 @@ import 'providers/service_provider.dart';
 import 'providers/service_request_provider.dart';
 import 'views/role_selection/role_selection_screen.dart';
 import 'theme/app_theme.dart';
+import 'services/notification_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // =====================================================
-  // FIREBASE INITIALIZATION
-  // =====================================================
+  // 1. Initialize Firebase.
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
   debugPrint('Firebase initialized successfully.');
 
-  // =====================================================
-  // START APP FIRST
-  // =====================================================
-  runApp(
-    const SuvidhaApp(),
-  );
-
-  // =====================================================
-  // FIREBASE APP CHECK
-  // =====================================================
+  // 2. Activate Firebase App Check.
   try {
     await FirebaseAppCheck.instance.activate(
       androidProvider: AndroidProvider.debug,
-      appleProvider: AppleProvider.debug,
     );
 
     debugPrint('Firebase App Check activated successfully.');
-  } catch (e) {
-    debugPrint('Firebase App Check error: $e');
+  } catch (e, stackTrace) {
+    debugPrint('Firebase App Check activation error: $e');
+    debugPrintStack(stackTrace: stackTrace);
   }
+
+  // 3. Initialize push notifications.
+  // NotificationService catches token retrieval errors internally.
+  try {
+    await NotificationService.initialize();
+  } catch (e, stackTrace) {
+    debugPrint('Notification initialization error: $e');
+    debugPrintStack(stackTrace: stackTrace);
+  }
+
+  // 4. Start the app.
+  runApp(const SuvidhaApp());
 }
 
-// =======================================================
-// SUVIDHA APP
-// =======================================================
 class SuvidhaApp extends StatelessWidget {
-  const SuvidhaApp({
-    super.key,
-  });
+  const SuvidhaApp({super.key});
 
   @override
   Widget build(BuildContext context) {

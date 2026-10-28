@@ -1,12 +1,16 @@
 
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/screens/profile/edit_user_profile_screen.dart';
 
 class UserProfileScreen extends StatefulWidget {
+  final VoidCallback onBackToHome;
+
   const UserProfileScreen({
     super.key,
+    required this.onBackToHome,
   });
 
   @override
@@ -16,20 +20,9 @@ class UserProfileScreen extends StatefulWidget {
 
 class _UserProfileScreenState
     extends State<UserProfileScreen> {
-
-  // =====================================================
-  // FIREBASE
-  // =====================================================
-
-  final FirebaseAuth _auth =
-      FirebaseAuth.instance;
-
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore =
       FirebaseFirestore.instance;
-
-  // =====================================================
-  // VARIABLES
-  // =====================================================
 
   bool _isLoading = true;
 
@@ -37,107 +30,100 @@ class _UserProfileScreenState
   String _email = '';
   String _phone = '';
 
-  // =====================================================
-  // INIT
-  // =====================================================
-
   @override
   void initState() {
     super.initState();
-
     _loadUserProfile();
   }
 
-  // =====================================================
   // LOAD USER PROFILE
-  // =====================================================
-
   Future<void> _loadUserProfile() async {
     try {
-      final User? currentUser =
-          _auth.currentUser;
+      final User? currentUser = _auth.currentUser;
 
       if (currentUser == null) {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
         return;
       }
 
-      final DocumentSnapshot document =
-          await _firestore
-              .collection('users')
-              .doc(currentUser.uid)
-              .get();
+      final DocumentSnapshot document = await _firestore
+          .collection('users')
+          .doc(currentUser.uid)
+          .get();
+
+      if (!mounted) return;
 
       if (document.exists) {
         final Map<String, dynamic> data =
-            document.data()
-                as Map<String, dynamic>;
+            document.data() as Map<String, dynamic>;
 
         setState(() {
           _name = data['name'] ?? '';
-          _email =
-              data['email'] ??
-              currentUser.email ??
-              '';
+          _email = data['email'] ?? currentUser.email ?? '';
           _phone = data['phone'] ?? '';
           _isLoading = false;
         });
       } else {
         setState(() {
-          _email =
-              currentUser.email ?? '';
+          _email = currentUser.email ?? '';
           _isLoading = false;
         });
       }
     } catch (e) {
-      debugPrint(
-        'Load User Profile Error: $e',
-      );
+      debugPrint('Load User Profile Error: $e');
 
-      setState(() {
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
-  // =====================================================
   // LOGOUT
-  // =====================================================
-
   Future<void> _logout() async {
     try {
       await _auth.signOut();
 
       if (!mounted) return;
 
-      // Login screen navigation
-      // will be added according to
-      // your current authentication flow.
-      
+      // Keep your existing authentication/navigation flow.
       Navigator.popUntil(
         context,
         (route) => route.isFirst,
       );
     } catch (e) {
-      debugPrint(
-        'Logout Error: $e',
+      debugPrint('Logout Error: $e');
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to log out. Please try again.'),
+        ),
       );
     }
   }
 
-  // =====================================================
-  // BUILD
-  // =====================================================
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-
       appBar: AppBar(
-        title: const Text(
-          'My Profile',
+        automaticallyImplyLeading: false,
+        centerTitle: true,
+
+        // BACK TO HOME TAB
+        leading: IconButton(
+          tooltip: 'Back to Home',
+          icon: const Icon(Icons.arrow_back),
+          onPressed: widget.onBackToHome,
         ),
 
-        centerTitle: true,
+        title: const Text('My Profile'),
       ),
 
       body: _isLoading
@@ -145,19 +131,12 @@ class _UserProfileScreenState
               child: CircularProgressIndicator(),
             )
           : SingleChildScrollView(
-              padding:
-                  const EdgeInsets.all(20),
-
+              padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-
-                  // =====================================
                   // PROFILE IMAGE
-                  // =====================================
-
                   const CircleAvatar(
                     radius: 55,
-
                     child: Icon(
                       Icons.person,
                       size: 60,
@@ -166,28 +145,18 @@ class _UserProfileScreenState
 
                   const SizedBox(height: 20),
 
-                  // =====================================
                   // NAME
-                  // =====================================
-
                   Text(
-                    _name.isEmpty
-                        ? 'User'
-                        : _name,
-
+                    _name.isEmpty ? 'User' : _name,
                     style: const TextStyle(
                       fontSize: 25,
-                      fontWeight:
-                          FontWeight.bold,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
 
                   const SizedBox(height: 30),
 
-                  // =====================================
                   // EMAIL
-                  // =====================================
-
                   _profileItem(
                     icon: Icons.email_outlined,
                     title: 'Email',
@@ -198,10 +167,7 @@ class _UserProfileScreenState
 
                   const SizedBox(height: 15),
 
-                  // =====================================
                   // PHONE
-                  // =====================================
-
                   _profileItem(
                     icon: Icons.phone_outlined,
                     title: 'Phone',
@@ -212,60 +178,40 @@ class _UserProfileScreenState
 
                   const SizedBox(height: 30),
 
-                  // =====================================
                   // EDIT PROFILE
-                  // =====================================
-
                   SizedBox(
                     width: double.infinity,
                     height: 52,
-
                     child: ElevatedButton.icon(
                       onPressed: () {
-                        // Edit Profile
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => EditProfileScreen(),
+                            builder: (context) =>
+                                EditProfileScreen(),
                           ),
                         );
                       },
-
-                      icon: const Icon(
-                        Icons.edit,
-                      ),
-
+                      icon: const Icon(Icons.edit),
                       label: const Text(
                         'Edit Profile',
-                        style: TextStyle(
-                          fontSize: 16,
-                        ),
+                        style: TextStyle(fontSize: 16),
                       ),
                     ),
                   ),
 
                   const SizedBox(height: 15),
 
-                  // =====================================
                   // LOGOUT
-                  // =====================================
-
                   SizedBox(
                     width: double.infinity,
                     height: 52,
-
                     child: OutlinedButton.icon(
                       onPressed: _logout,
-
-                      icon: const Icon(
-                        Icons.logout,
-                      ),
-
+                      icon: const Icon(Icons.logout),
                       label: const Text(
                         'Logout',
-                        style: TextStyle(
-                          fontSize: 16,
-                        ),
+                        style: TextStyle(fontSize: 16),
                       ),
                     ),
                   ),
@@ -275,10 +221,7 @@ class _UserProfileScreenState
     );
   }
 
-  // =====================================================
   // PROFILE ITEM
-  // =====================================================
-
   Widget _profileItem({
     required IconData icon,
     required String title,
@@ -286,18 +229,13 @@ class _UserProfileScreenState
   }) {
     return Card(
       elevation: 2,
-
       shape: RoundedRectangleBorder(
-        borderRadius:
-            BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(15),
       ),
-
       child: Padding(
         padding: const EdgeInsets.all(16),
-
         child: Row(
           children: [
-
             CircleAvatar(
               child: Icon(icon),
             ),
@@ -306,17 +244,13 @@ class _UserProfileScreenState
 
             Expanded(
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
-
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-
                   Text(
                     title,
                     style: TextStyle(
                       fontSize: 13,
-                      color:
-                          Colors.grey.shade600,
+                      color: Colors.grey.shade600,
                     ),
                   ),
 
@@ -326,8 +260,7 @@ class _UserProfileScreenState
                     value,
                     style: const TextStyle(
                       fontSize: 16,
-                      fontWeight:
-                          FontWeight.w500,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
@@ -339,4 +272,3 @@ class _UserProfileScreenState
     );
   }
 }
-

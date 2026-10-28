@@ -1,9 +1,11 @@
-
 import 'package:flutter/material.dart';
 
 class WorkerOverview extends StatelessWidget {
+  final VoidCallback onRequestsTap;
+
   const WorkerOverview({
     super.key,
+    required this.onRequestsTap,
   });
 
   @override
@@ -36,10 +38,14 @@ class WorkerOverview extends StatelessWidget {
           children: [
 
             Expanded(
-              child: _StatCard(
-                icon: Icons.assignment,
-                title: 'Requests',
-                value: '0',
+              child: GestureDetector(
+                onTap: onRequestsTap,
+
+                child: _StatCard(
+                  icon: Icons.assignment,
+                  title: 'Requests',
+                  value: '0',
+                ),
               ),
             ),
 
@@ -165,4 +171,3 @@ class _StatCard extends StatelessWidget {
     );
   }
 }
-

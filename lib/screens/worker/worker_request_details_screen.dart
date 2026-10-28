@@ -8,6 +8,7 @@ import '../../providers/service_request_provider.dart';
 import '../../services/chat_service.dart';
 import '../chat/chat_screen.dart';
 
+
 class WorkerRequestDetailsScreen extends StatefulWidget {
   final ServiceRequestModel request;
 
@@ -78,7 +79,7 @@ class _WorkerRequestDetailsScreenState
       );
 
       // =============================================
-      // SUCCESS
+       // SUCCESS
       // =============================================
 
       if (!mounted) return;

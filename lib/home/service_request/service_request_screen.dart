@@ -159,7 +159,6 @@ class _ServiceRequestScreenState
       );
     } finally {
       if (!mounted) return;
-
       setState(() {
         isLoading = false;
       });
@@ -169,20 +168,16 @@ class _ServiceRequestScreenState
   // =====================================================
   // BUILD
   // =====================================================
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Request Service',
-        ),
+        title: const Text('Request Service'),
         centerTitle: true,
       ),
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
-
         child: Column(
           crossAxisAlignment:
               CrossAxisAlignment.start,
@@ -194,21 +189,12 @@ class _ServiceRequestScreenState
 
             Card(
               elevation: 2,
-
               shape: RoundedRectangleBorder(
-                borderRadius:
-                    BorderRadius.circular(15),
-              ),
-
+              borderRadius:BorderRadius.circular(15)),
               child: Padding(
-                padding:
-                    const EdgeInsets.all(18),
-
+                padding:const EdgeInsets.all(18),
                 child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 30,
-
+                  children: [CircleAvatar(radius: 30,
                       child: const Icon(
                         Icons.person,
                         size: 32,
@@ -218,9 +204,7 @@ class _ServiceRequestScreenState
                     const SizedBox(width: 15),
 
                     Expanded(
-                      child: Column(
-                        crossAxisAlignment:
-                            CrossAxisAlignment.start,
+                      child: Column(crossAxisAlignment: CrossAxisAlignment.start,
 
                         children: [
                           Text(
@@ -230,8 +214,7 @@ class _ServiceRequestScreenState
                             style:
                                 const TextStyle(
                               fontSize: 20,
-                              fontWeight:
-                                  FontWeight.bold,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
 

@@ -20,21 +20,17 @@ class _WorkerAvailabilityCardState
   // =====================================================
   // FIRESTORE
   // =====================================================
-
-  final FirebaseFirestore _firestore =
-      FirebaseFirestore.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
   // =====================================================
   // AVAILABILITY
   // =====================================================
-
   bool _isAvailable = false;
   bool _isLoading = true;
 
   // =====================================================
   // INIT
   // =====================================================
-
   @override
   void initState() {
     super.initState();
@@ -45,11 +41,8 @@ class _WorkerAvailabilityCardState
   // =====================================================
   // LOAD AVAILABILITY
   // =====================================================
-
   Future<void> _loadAvailability() async {
-    final User? user =
-        FirebaseAuth.instance.currentUser;
-
+    final User? user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       return;
     }
@@ -62,13 +55,10 @@ class _WorkerAvailabilityCardState
               .get();
 
       if (doc.exists) {
-        final data =
-            doc.data() as Map<String, dynamic>;
+        final data = doc.data() as Map<String, dynamic>;
 
         setState(() {
-          _isAvailable =
-              data['isAvailable'] ?? false;
-
+          _isAvailable = data['isAvailable'] ?? false;
           _isLoading = false;
         });
       } else {
@@ -81,7 +71,6 @@ class _WorkerAvailabilityCardState
       debugPrint(
         'Error loading availability: $e',
       );
-
       setState(() {
         _isLoading = false;
       });
@@ -91,13 +80,10 @@ class _WorkerAvailabilityCardState
   // =====================================================
   // UPDATE AVAILABILITY
   // =====================================================
-
   Future<void> _updateAvailability(
     bool value,
   ) async {
-    final User? user =
-        FirebaseAuth.instance.currentUser;
-
+    final User? user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       return;
     }
@@ -132,9 +118,7 @@ class _WorkerAvailabilityCardState
         ScaffoldMessenger.of(context)
             .showSnackBar(
           const SnackBar(
-            content: Text(
-              'Could not update availability.',
-            ),
+            content: Text('Could not update availability.'),
           ),
         );
       }
@@ -144,22 +128,19 @@ class _WorkerAvailabilityCardState
   // =====================================================
   // BUILD
   // =====================================================
-
   @override
   Widget build(BuildContext context) {
     return Card(
       elevation: 2,
-
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(15),
       ),
 
       child: Padding(
         padding: const EdgeInsets.all(18),
-
         child: Row(
           children: [
-
+ 
             // =========================================
             // ICON
             // =========================================

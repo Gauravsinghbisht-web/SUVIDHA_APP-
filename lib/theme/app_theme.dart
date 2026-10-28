@@ -8,7 +8,6 @@ class AppTheme {
 
   static const Color primaryColor = Color(0xFF1565C0);
   static const Color secondaryColor = Color(0xFF00A896);
-
   static const Color backgroundColor = Color(0xFFF7F9FC);
   static const Color cardColor = Colors.white;
 

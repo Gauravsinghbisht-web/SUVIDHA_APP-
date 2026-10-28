@@ -15,148 +15,136 @@ class GoogleMapScreen extends StatefulWidget {
 class _GoogleMapScreenState extends State<GoogleMapScreen> {
   GoogleMapController? _mapController;
 
-  // Current user's location
   LatLng? _currentLocation;
-
-  // Worker markers
   Set<Marker> _workerMarkers = {};
 
   bool _isLoading = true;
+  String? _locationError;
 
   @override
   void initState() {
     super.initState();
-
     _getCurrentLocation();
   }
 
-  // =====================================================
-  // GET CURRENT LOCATION
-  // =====================================================
-
+  // GET THE ACTUAL DEVICE LOCATION
   Future<void> _getCurrentLocation() async {
-    // Check whether location service is enabled
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!mounted) return;
 
-    if (!serviceEnabled) {
-      setState(() {
-        _isLoading = false;
-      });
+    setState(() {
+      _isLoading = true;
+      _locationError = null;
+    });
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please turn on your location service.'),
-          ),
+    try {
+      // 1. Check whether device location is enabled.
+      final bool serviceEnabled =
+          await Geolocator.isLocationServiceEnabled();
+
+      if (!serviceEnabled) {
+        throw Exception(
+          'Location is turned off. Please enable GPS in Settings.',
         );
       }
 
-      return;
-    }
+      // 2. Check and request location permission.
+      LocationPermission permission =
+          await Geolocator.checkPermission();
 
-    // Check location permission
-    LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
 
-    // Ask for permission if not already granted
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-    }
-
-    // Permission denied
-    if (permission == LocationPermission.denied) {
-      setState(() {
-        _isLoading = false;
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Location permission denied.'),
-          ),
+      if (permission == LocationPermission.denied) {
+        throw Exception(
+          'Location permission denied. Please allow location access.',
         );
       }
 
-      return;
-    }
-
-    // Permission permanently denied
-    if (permission == LocationPermission.deniedForever) {
-      setState(() {
-        _isLoading = false;
-      });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Location permission is permanently denied. '
-              'Please enable it from Settings.',
-            ),
-          ),
+      if (permission == LocationPermission.deniedForever) {
+        throw Exception(
+          'Location permission is permanently denied. '
+          'Enable it in Settings > Apps > Suvidha > Permissions.',
         );
       }
 
-      return;
-    }
+      // 3. Get a fresh GPS position, not a hardcoded location.
+      final Position position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 20),
+        ),
+      );
 
-    // ===================================================
-    // GET CURRENT GPS LOCATION
-    // ===================================================
-    Position position = await Geolocator.getCurrentPosition(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-      ),
-    );
+      final LatLng location = LatLng(
+        position.latitude,
+        position.longitude,
+      );
 
-    final LatLng location = LatLng(
-      position.latitude,
-      position.longitude,
-    );
+      debugPrint('CURRENT GPS LATITUDE: ${position.latitude}');
+      debugPrint('CURRENT GPS LONGITUDE: ${position.longitude}');
 
-    // ===================================================
-    // SAVE USER LOCATION
-    // ===================================================
-    await _saveLocationToFirestore(position);
+      if (!mounted) return;
 
-    // ===================================================
-    // GET WORKERS FROM FIRESTORE
-    // ===================================================
-    await _getWorkers();
-
-    // ===================================================
-    // UPDATE CURRENT LOCATION
-    // ===================================================
-    if (mounted) {
+      // 4. Update the map with the actual GPS coordinates.
       setState(() {
         _currentLocation = location;
         _isLoading = false;
       });
-    }
 
-    // ===================================================
-    // MOVE MAP TO CURRENT LOCATION
-    // ===================================================
-    if (_mapController != null) {
-      _mapController!.animateCamera(
-        CameraUpdate.newCameraPosition(
-          CameraPosition(
-            target: location,
-            zoom: 14,
-          ),
-        ),
-      );
+      // 5. Move the camera to the current location.
+      await _moveCameraToLocation(location);
+
+      // 6. Save the current user's coordinates.
+      await _saveLocationToFirestore(position);
+
+      // 7. Load nearby worker markers.
+      await _getWorkers();
+    } catch (e) {
+      debugPrint('LOCATION ERROR: $e');
+
+      if (!mounted) return;
+
+      setState(() {
+        _locationError = e.toString().replaceFirst(
+          'Exception: ',
+          '',
+        );
+        _isLoading = false;
+      });
     }
   }
 
-  // =====================================================
-  // SAVE CURRENT USER LOCATION TO FIRESTORE
-  // =====================================================
-  Future<void> _saveLocationToFirestore(Position position) async {
+  // MOVE THE MAP CAMERA
+  Future<void> _moveCameraToLocation(
+    LatLng location,
+  ) async {
+    final controller = _mapController;
+
+    if (controller == null) return;
+
+    try {
+      await controller.animateCamera(
+        CameraUpdate.newCameraPosition(
+          CameraPosition(
+            target: location,
+            zoom: 16,
+          ),
+        ),
+      );
+    } catch (e) {
+      debugPrint('CAMERA ERROR: $e');
+    }
+  }
+
+  // SAVE USER LOCATION TO FIRESTORE
+  Future<void> _saveLocationToFirestore(
+    Position position,
+  ) async {
     final User? user = FirebaseAuth.instance.currentUser;
 
-    // Check if a user is logged in
     if (user == null) {
-      print('No logged-in user found.');
+      debugPrint('No logged-in user. Location not saved.');
       return;
     }
 
@@ -169,134 +157,154 @@ class _GoogleMapScreenState extends State<GoogleMapScreen> {
         'longitude': position.longitude,
       });
 
-      print('User location saved successfully!');
-      print('Latitude: ${position.latitude}');
-      print('Longitude: ${position.longitude}');
+      debugPrint('User location saved successfully.');
     } catch (e) {
-      print('Error saving user location: $e');
+      debugPrint('Could not save user location: $e');
     }
   }
 
-  // =====================================================
-  // GET WORKERS FROM FIRESTORE
-  // =====================================================
+  // LOAD WORKERS FROM FIRESTORE
   Future<void> _getWorkers() async {
     try {
-      final QuerySnapshot snapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .where('role', isEqualTo: 'worker')
-          .get();
+      final QuerySnapshot<Map<String, dynamic>> snapshot =
+          await FirebaseFirestore.instance
+              .collection('users')
+              .where('role', isEqualTo: 'worker')
+              .get();
 
-      Set<Marker> markers = {};
+      final Set<Marker> markers = {};
 
       for (final doc in snapshot.docs) {
-        final data = doc.data() as Map<String, dynamic>;
+        final data = doc.data();
 
-        // Get worker latitude
         final latitude = data['latitude'];
-
-        // Get worker longitude
         final longitude = data['longitude'];
 
-        // Get worker name
-        final name = data['name'] ?? 'Worker';
-
-        // Make sure latitude and longitude exist
-        if (latitude == null || longitude == null) {
+        if (latitude is! num || longitude is! num) {
           continue;
         }
 
-        final double workerLatitude =
-            (latitude as num).toDouble();
+        final double workerLatitude = latitude.toDouble();
+        final double workerLongitude = longitude.toDouble();
 
-        final double workerLongitude =
-            (longitude as num).toDouble();
+        // Ignore invalid coordinates.
+        if (workerLatitude < -90 ||
+            workerLatitude > 90 ||
+            workerLongitude < -180 ||
+            workerLongitude > 180) {
+          continue;
+        }
 
-        // Create worker marker
-        final Marker workerMarker = Marker(
-          markerId: MarkerId(doc.id),
-          position: LatLng(
-            workerLatitude,
-            workerLongitude,
-          ),
-
-          infoWindow: InfoWindow(
-            title: name.toString(),
-            snippet: 'Worker',
+        markers.add(
+          Marker(
+            markerId: MarkerId(doc.id),
+            position: LatLng(
+              workerLatitude,
+              workerLongitude,
+            ),
+            infoWindow: InfoWindow(
+              title: (data['name'] ?? 'Worker').toString(),
+              snippet: 'Worker',
+            ),
           ),
         );
-
-        markers.add(workerMarker);
       }
 
-      if (mounted) {
-        setState(() {
-          _workerMarkers = markers;
-        });
-      }
+      if (!mounted) return;
 
-      print('Workers found: ${markers.length}');
+      setState(() {
+        _workerMarkers = markers;
+      });
+
+      debugPrint('Workers found: ${markers.length}');
     } catch (e) {
-      print('Error getting workers: $e');
+      debugPrint('ERROR LOADING WORKERS: $e');
     }
   }
 
-  // =====================================================
-  // BUILD UI
-  // =====================================================
+  @override
+  void dispose() {
+    _mapController?.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Nearby Workers'),
+        actions: [
+          IconButton(
+            tooltip: 'Refresh my location',
+            icon: const Icon(Icons.my_location),
+            onPressed: _getCurrentLocation,
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(
-              child: CircularProgressIndicator(),
-            )
-          : GoogleMap(
-              // ==========================================
-              // INITIAL CAMERA POSITION
-              // ==========================================
-              initialCameraPosition: CameraPosition(
-                target: _currentLocation ??
-                    const LatLng(30.7046, 76.7179),
-                zoom: 14,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Getting your current location...'),
+                ],
               ),
-
-              // ==========================================
-              // CURRENT USER LOCATION
-              // ==========================================
-              myLocationEnabled: _currentLocation != null,
-
-              myLocationButtonEnabled: true,
-
-              zoomControlsEnabled: true,
-
-              // ==========================================
-              // WORKER MARKERS
-              // ==========================================
-              markers: _workerMarkers,
-
-              // ==========================================
-              // MAP CREATED
-              // ==========================================
-              onMapCreated: (GoogleMapController controller) {
-                _mapController = controller;
-
-                if (_currentLocation != null) {
-                  controller.animateCamera(
-                    CameraUpdate.newCameraPosition(
-                      CameraPosition(
-                        target: _currentLocation!,
-                        zoom: 14,
-                      ),
+            )
+          : _locationError != null
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.location_off,
+                          size: 56,
+                          color: Colors.red,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          _locationError!,
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 20),
+                        ElevatedButton.icon(
+                          onPressed: _getCurrentLocation,
+                          icon: const Icon(Icons.refresh),
+                          label: const Text('Try Again'),
+                        ),
+                        TextButton(
+                          onPressed:
+                              Geolocator.openLocationSettings,
+                          child: const Text(
+                            'Open Location Settings',
+                          ),
+                        ),
+                      ],
                     ),
-                  );
-                }
-              },
-            ),
+                  ),
+                )
+              : GoogleMap(
+                  initialCameraPosition: CameraPosition(
+                    target: _currentLocation!,
+                    zoom: 16,
+                  ),
+                  myLocationEnabled: true,
+                  myLocationButtonEnabled: true,
+                  zoomControlsEnabled: true,
+                  markers: _workerMarkers,
+                  onMapCreated: (controller) {
+                    _mapController = controller;
+
+                    if (_currentLocation != null) {
+                      _moveCameraToLocation(
+                        _currentLocation!,
+                      );
+                    }
+                  },
+                ),
     );
   }
 }
