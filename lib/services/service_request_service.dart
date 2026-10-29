@@ -34,6 +34,82 @@ class ServiceRequestService {
       rethrow;
     }
   }
+  
+  // WORKER REQUESTS TO START THE JOB
+  Future<void> requestStart({
+    required String requestId,
+    required String workerId,
+  }) async {
+    final ref = _firestore
+        .collection('service_requests')
+        .doc(requestId);
+
+    await _firestore.runTransaction((transaction) async {
+      final snapshot = await transaction.get(ref);
+
+      if (!snapshot.exists) {
+        throw Exception('Service request not found.');
+      }
+
+      final data = snapshot.data()!;
+
+      if (data['workerId'] != workerId) {
+        throw Exception('You are not assigned to this job.');
+      }
+
+      if (data['status'] != 'accepted') {
+        throw Exception('Only accepted jobs can be started.');
+      }
+
+      if ((data['startRequestStatus'] ?? 'none') != 'none') {
+        throw Exception('A start request already exists.');
+      }
+
+      transaction.update(ref, {
+        'startRequestStatus': 'requested',
+        'startRequestedAt': FieldValue.serverTimestamp(),
+      });
+    });
+  }
+
+  // USER CONFIRMS THE JOB START
+  Future<void> confirmStart({
+    required String requestId,
+    required String userId,
+  }) async {
+    final ref = _firestore
+        .collection('service_requests')
+        .doc(requestId);
+
+    await _firestore.runTransaction((transaction) async {
+      final snapshot = await transaction.get(ref);
+
+      if (!snapshot.exists) {
+        throw Exception('Service request not found.');
+      }
+
+      final data = snapshot.data()!;
+
+      if (data['userId'] != userId) {
+        throw Exception('You cannot confirm this request.');
+      }
+
+      if (data['status'] != 'accepted') {
+        throw Exception('This job is not ready to start.');
+      }
+
+      if (data['startRequestStatus'] != 'requested') {
+        throw Exception('There is no pending start request.');
+      }
+
+      transaction.update(ref, {
+        'startRequestStatus': 'confirmed',
+        'status': 'started',
+        'workStartedAt': FieldValue.serverTimestamp(),
+      });
+    });
+  }
+
 
   // =====================================================
   // GET PENDING REQUESTS
@@ -203,10 +279,124 @@ class ServiceRequestService {
     }
   }
 
+    // WORKER REQUESTS JOB COMPLETION
+Future<void> requestCompletion({
+  required String requestId,
+  required String workerId,
+}) async {
+  final ref = _firestore
+      .collection('service_requests')
+      .doc(requestId);
+
+  await _firestore.runTransaction((transaction) async {
+    final snapshot = await transaction.get(ref);
+
+    if (!snapshot.exists) {
+      throw Exception('Service request not found.');
+    }
+
+    final data = snapshot.data()!;
+
+    if (data['workerId'] != workerId) {
+      throw Exception('You are not assigned to this job.');
+    }
+
+    if (data['status'] != 'started') {
+      throw Exception('Only started jobs can be completed.');
+    }
+
+    transaction.update(ref, {
+      'status': 'completion_requested',
+      'completionRequestedAt':
+          FieldValue.serverTimestamp(),
+    });
+  });
+}
+
+ 
+  // USER CONFIRMS THAT THE JOB IS COMPLETED
+  Future<void> confirmCompletion({
+    required String requestId,
+    required String userId,
+  }) async {
+    final ref = _firestore
+        .collection('service_requests')
+        .doc(requestId);
+
+    await _firestore.runTransaction((transaction) async {
+      final snapshot = await transaction.get(ref);
+
+      if (!snapshot.exists) {
+        throw Exception('Service request not found.');
+      }
+
+      final data = snapshot.data()!;
+
+      if (data['userId'] != userId) {
+        throw Exception('You cannot confirm this request.');
+      }
+
+      if (data['status'] != 'completion_requested') {
+        throw Exception(
+          'The worker has not requested job completion yet.',
+        );
+      }
+
+      transaction.update(ref, {
+        'status': 'completed',
+        'completedAt': FieldValue.serverTimestamp(),
+      });
+    });
+  }
+
+  // SAVE A USER'S RATING AND REVIEW
+  Future<void> submitWorkerReview({
+    required String requestId,
+    required String userId,
+    required int rating,
+    required String review,
+  }) async {
+    if (rating < 1 || rating > 5) {
+      throw Exception('Rating must be between 1 and 5.');
+    }
+
+    final ref = _firestore
+        .collection('service_requests')
+        .doc(requestId);
+
+    await _firestore.runTransaction((transaction) async {
+      final snapshot = await transaction.get(ref);
+
+      if (!snapshot.exists) {
+        throw Exception('Service request not found.');
+      }
+
+      final data = snapshot.data()!;
+
+      if (data['userId'] != userId) {
+        throw Exception('You cannot review this request.');
+      }
+
+      if (data['status'] != 'completed') {
+        throw Exception('Only completed jobs can be reviewed.');
+      }
+
+      if (data['rating'] != null) {
+        throw Exception('You have already rated this job.');
+      }
+
+      transaction.update(ref, {
+        'rating': rating,
+        'review': review.trim(),
+        'reviewedBy': userId,
+        'reviewedAt': FieldValue.serverTimestamp(),
+      });
+    });
+  }
+
   // =====================================================
   // UPDATE REQUEST STATUS
   // =====================================================
-
   Future<void> updateRequestStatus(
     String requestId,
     String status,

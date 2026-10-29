@@ -21,7 +21,6 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> {
 
   Future<void> _askGemini() async {
     final String question = _controller.text.trim();
-
     if (question.isEmpty || _isLoading) {
       return;
     }

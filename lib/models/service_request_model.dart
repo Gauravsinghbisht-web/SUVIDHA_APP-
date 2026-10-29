@@ -1,4 +1,6 @@
 
+
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ServiceRequestModel {
@@ -9,12 +11,20 @@ class ServiceRequestModel {
   final String serviceType;
   final String status;
   final DateTime createdAt;
-
-  // Booking fields
   final DateTime? bookingDate;
   final String? bookingTime;
   final String? address;
   final String? problemDescription;
+
+  // Job start information
+  final String startRequestStatus;
+  final DateTime? startRequestedAt;
+  final DateTime? workStartedAt;
+
+  // Rating and review information
+  final int? rating;
+  final String? review;
+  final DateTime? reviewedAt;
 
   ServiceRequestModel({
     required this.id,
@@ -28,16 +38,30 @@ class ServiceRequestModel {
     this.bookingTime,
     this.address,
     this.problemDescription,
+    this.startRequestStatus = 'none',
+    this.startRequestedAt,
+    this.workStartedAt,
+    this.rating,
+    this.review,
+    this.reviewedAt,
   });
-
-  // =====================================================
-  // FROM FIRESTORE
-  // =====================================================
 
   factory ServiceRequestModel.fromMap(
     String id,
     Map<String, dynamic> map,
   ) {
+    DateTime? readDate(dynamic value) {
+      if (value is Timestamp) {
+        return value.toDate();
+      }
+
+      if (value is DateTime) {
+        return value;
+      }
+
+      return null;
+    }
+
     return ServiceRequestModel(
       id: id,
       userId: map['userId'] ?? '',
@@ -45,24 +69,23 @@ class ServiceRequestModel {
       serviceId: map['serviceId'] ?? '',
       serviceType: map['serviceType'] ?? '',
       status: map['status'] ?? 'pending',
-
-      createdAt: map['createdAt'] is Timestamp
-          ? (map['createdAt'] as Timestamp).toDate()
-          : DateTime.now(),
-
-      bookingDate: map['bookingDate'] is Timestamp
-          ? (map['bookingDate'] as Timestamp).toDate()
-          : null,
-
+      createdAt: readDate(map['createdAt']) ?? DateTime.now(),
+      bookingDate: readDate(map['bookingDate']),
       bookingTime: map['bookingTime'] as String?,
       address: map['address'] as String?,
       problemDescription: map['problemDescription'] as String?,
+
+      // Job start information
+      startRequestStatus: map['startRequestStatus'] ?? 'none',
+      startRequestedAt: readDate(map['startRequestedAt']),
+      workStartedAt: readDate(map['workStartedAt']),
+
+      // Rating and review information
+      rating: (map['rating'] as num?)?.toInt(),
+      review: map['review'] as String?,
+      reviewedAt: readDate(map['reviewedAt']),
     );
   }
-
-  // =====================================================
-  // TO FIRESTORE
-  // =====================================================
 
   Map<String, dynamic> toMap() {
     return {
@@ -72,21 +95,30 @@ class ServiceRequestModel {
       'serviceType': serviceType,
       'status': status,
       'createdAt': Timestamp.fromDate(createdAt),
-
-      // Booking fields
       'bookingDate': bookingDate != null
           ? Timestamp.fromDate(bookingDate!)
           : null,
-
       'bookingTime': bookingTime,
       'address': address,
       'problemDescription': problemDescription,
+
+      // Job start information
+      'startRequestStatus': startRequestStatus,
+      'startRequestedAt': startRequestedAt != null
+          ? Timestamp.fromDate(startRequestedAt!)
+          : null,
+      'workStartedAt': workStartedAt != null
+          ? Timestamp.fromDate(workStartedAt!)
+          : null,
+
+      // Rating and review information
+      'rating': rating,
+      'review': review,
+      'reviewedAt': reviewedAt != null
+          ? Timestamp.fromDate(reviewedAt!)
+          : null,
     };
   }
-
-  // =====================================================
-  // COPY WITH
-  // =====================================================
 
   ServiceRequestModel copyWith({
     String? id,
@@ -100,6 +132,12 @@ class ServiceRequestModel {
     String? bookingTime,
     String? address,
     String? problemDescription,
+    String? startRequestStatus,
+    DateTime? startRequestedAt,
+    DateTime? workStartedAt,
+    int? rating,
+    String? review,
+    DateTime? reviewedAt,
   }) {
     return ServiceRequestModel(
       id: id ?? this.id,
@@ -109,12 +147,20 @@ class ServiceRequestModel {
       serviceType: serviceType ?? this.serviceType,
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
-
       bookingDate: bookingDate ?? this.bookingDate,
       bookingTime: bookingTime ?? this.bookingTime,
       address: address ?? this.address,
-      problemDescription:
-          problemDescription ?? this.problemDescription,
+      problemDescription: problemDescription ?? this.problemDescription,
+
+      // Job start information
+      startRequestStatus: startRequestStatus ?? this.startRequestStatus,
+      startRequestedAt: startRequestedAt ?? this.startRequestedAt,
+      workStartedAt: workStartedAt ?? this.workStartedAt,
+
+      // Rating and review information
+      rating: rating ?? this.rating,
+      review: review ?? this.review,
+      reviewedAt: reviewedAt ?? this.reviewedAt,
     );
   }
 }

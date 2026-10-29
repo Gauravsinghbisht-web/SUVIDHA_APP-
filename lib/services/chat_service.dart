@@ -249,4 +249,6 @@ class ChatService {
           },
         );
   }
+
+  Future<ChatModel?> getOrCreateChat({required String requestId, required String userId, required String workerId}) async {}
 }
