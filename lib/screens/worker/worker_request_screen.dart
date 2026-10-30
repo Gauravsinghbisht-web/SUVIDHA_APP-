@@ -373,7 +373,7 @@ class _WorkerRequestsScreenState
   Color _statusColor(String status) {
     switch (status) {
       case 'accepted':
-        return Colors.green;
+        return const Color.fromARGB(255, 69, 193, 74);
       case 'rejected':
         return Colors.red;
       case 'completed':

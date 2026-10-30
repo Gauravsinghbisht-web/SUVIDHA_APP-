@@ -58,9 +58,36 @@ class ServiceRequestProvider extends ChangeNotifier {
         problemDescription: problemDescription,
       );
 
-      await _requestService.createRequest(request);
+      
+await _requestService.createRequest(request);
 
-      debugPrint('Service request created successfully.');
+debugPrint('Service request created successfully.');
+
+// Create an in-app notification for the worker.
+// Notification failure must not cancel a successful booking.
+try {
+  await FirebaseFirestore.instance
+      .collection('users')
+      .doc(workerId)
+      .collection('notifications')
+      .add({
+    'recipientId': workerId,
+    'senderId': userId,
+    'requestId': requestId,
+    'title': 'New service request',
+    'body': 'You received a new $serviceType request.',
+    'type': 'new_request',
+    'isRead': false,
+    'createdAt': FieldValue.serverTimestamp(),
+  });
+
+  debugPrint('Worker notification created successfully.');
+} catch (notificationError) {
+  debugPrint(
+    'Notification creation failed: $notificationError',
+  );
+}
+
 
       _isLoading = false;
       notifyListeners();

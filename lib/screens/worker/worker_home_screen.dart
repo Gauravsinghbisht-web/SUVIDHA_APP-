@@ -1,18 +1,17 @@
 
 
-
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application_1/services/location_service.dart';
 import 'package:flutter_application_1/widgets/notification_dot.dart';
-
 import '../../home/worker_widgets/worker_availability_card.dart';
 import '../../home/worker_widgets/worker_overview.dart';
 import '../../home/worker_widgets/worker_actions.dart';
 import 'worker_request_screen.dart';
 import 'worker_chat_screen.dart';
 import 'worker_profile_screen.dart';
+import 'worker_notifications_screen.dart';
 
 class WorkerHomeScreen extends StatefulWidget {
   final String name;
@@ -171,16 +170,66 @@ class _WorkerHomeScreenState extends State<WorkerHomeScreen> {
         title: const Text('EASY'),
         centerTitle: true,
         automaticallyImplyLeading: false,
-        actions: [
-          IconButton(
-            onPressed: () {
-              setState(() {
-                _currentIndex = 3;
-              });
-            },
-            icon: const Icon(Icons.person_outline),
-          ),
-        ],
+        
+actions: [
+  // Notifications bell with live unread count
+  StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+    stream: FirebaseAuth.instance.currentUser == null
+        ? null
+        : FirebaseFirestore.instance
+            .collection('users')
+            .doc(FirebaseAuth.instance.currentUser!.uid)
+            .collection('notifications')
+            .where('isRead', isEqualTo: false)
+            .snapshots(),
+    builder: (context, snapshot) {
+      final unreadCount = snapshot.data?.docs.length ?? 0;
+
+      return IconButton(
+        tooltip: 'Notifications',
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) =>
+                  const WorkerNotificationsScreen(),
+            ),
+          );
+        },
+        icon: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            const Icon(Icons.notifications_outlined),
+            if (unreadCount > 0)
+              Positioned(
+                right: -2,
+                top: -2,
+                child: Container(
+                  width: 10,
+                  height: 10,
+                  decoration: const BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      );
+    },
+  ),
+
+  // Existing profile button
+  IconButton(
+    onPressed: () {
+      setState(() {
+        _currentIndex = 3;
+      });
+    },
+    icon: const Icon(Icons.person_outline),
+  ),
+],
+
       ),
 
       body: IndexedStack(
